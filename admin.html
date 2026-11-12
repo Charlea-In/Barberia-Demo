@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel del equipo — Norte Barbería</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#121214">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="admin-body">
+
+  <!-- LOGIN -->
+  <div class="login" id="login-screen">
+    <div class="login__brand">
+      <a class="brand" href="index.html" style="color:var(--cream)">
+        <span class="brand__mark" aria-hidden="true">NB</span>
+        <span class="brand__text">
+          <span class="brand__name">NORTE</span>
+          <span class="brand__sub">BARBERÍA</span>
+        </span>
+      </a>
+      <div>
+        <div class="eyebrow" style="margin-bottom:16px">Panel interno</div>
+        <div class="login__quote">El oficio se defiende<br>con <em>orden</em>.</div>
+      </div>
+      <div class="mono" style="color:#7d776d;letter-spacing:.14em">CITAS · CLIENTES · CAJA</div>
+    </div>
+
+    <div class="login__panel">
+      <div class="login__card">
+        <span class="eyebrow">Acceso del equipo</span>
+        <h1>Entrar al panel</h1>
+        <p>Gestiona la agenda, clientes, ingresos y gastos. Todo se guarda en tu Google Sheet.</p>
+        <form class="login__form" id="login-form">
+          <div class="field">
+            <label for="login-key">Clave de acceso</label>
+            <input class="input" id="login-key" name="key" type="password" autocomplete="current-password" placeholder="••••••••" required>
+          </div>
+          <button class="btn-admin btn-admin--primary" type="submit" style="min-height:42px">Entrar al panel</button>
+        </form>
+        <div class="login__hint" id="login-hint"></div>
+        <div style="margin-top:18px">
+          <a class="link-arrow" href="index.html" style="color:#6f6a60">Volver al sitio público</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div class="admin-shell" id="admin-shell" hidden>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__brand">
+        <span class="brand__mark" aria-hidden="true">NB</span>
+        <span class="brand__text">
+          <span class="brand__name">NORTE</span>
+          <span class="brand__sub" style="color:#7d776d">ADMIN</span>
+        </span>
+      </div>
+
+      <nav class="sidebar__nav" aria-label="Secciones del panel">
+        <div class="sidebar__group">Operación</div>
+        <button class="sidebar__link" type="button" data-view="resumen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Resumen
+        </button>
+        <button class="sidebar__link" type="button" data-view="citas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+          Citas <span class="badge-count" id="badge-citas">0</span>
+        </button>
+        <button class="sidebar__link" type="button" data-view="clientes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.9M17 14.7c2 .6 3.5 2.4 3.5 5.3"/></svg>
+          Clientes
+        </button>
+
+        <div class="sidebar__group">Dinero</div>
+        <button class="sidebar__link" type="button" data-view="ingresos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 17l6-6 4 4 6-8"/><path d="M14 7h6v6"/></svg>
+          Ingresos
+        </button>
+        <button class="sidebar__link" type="button" data-view="gastos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7l6 6 4-4 6 8"/><path d="M14 17h6v-6"/></svg>
+          Gastos
+        </button>
+
+        <div class="sidebar__group">Catálogo</div>
+        <button class="sidebar__link" type="button" data-view="barberos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M8.4 7.6L20 18M8.4 16.4L20 6"/></svg>
+          Barberos
+        </button>
+        <button class="sidebar__link" type="button" data-view="servicios">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          Servicios
+        </button>
+        <button class="sidebar__link" type="button" data-view="ajustes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.63h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.37 9v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
+          Ajustes
+        </button>
+      </nav>
+
+      <div class="sidebar__foot">
+        <div class="sidebar__user"><span class="status-dot status-dot--open">Sesión activa</span></div>
+        <button class="sidebar__link" type="button" id="logout-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
+          Cerrar sesión
+        </button>
+        <a class="sidebar__link" href="index.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+          Ver sitio público
+        </a>
+      </div>
+    </aside>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <div class="admin-main">
+      <header class="topbar">
+        <div class="topbar__left">
+          <button class="icon-btn menu-btn" type="button" id="menu-btn" aria-label="Abrir menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+          <span class="topbar__title" id="topbar-title">Resumen</span>
+        </div>
+        <div class="topbar__right">
+          <span class="mode-chip" id="mode-chip">Modo demo</span>
+          <span class="mono muted" id="today-label" style="display:none">—</span>
+        </div>
+      </header>
+
+      <main class="view" id="view"></main>
+    </div>
+  </div>
+
+  <!-- DRAWER CLIENTE -->
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  <aside class="drawer" id="client-drawer" aria-hidden="true" aria-label="Detalle del cliente">
+    <div class="drawer__head">
+      <div>
+        <span class="eyebrow eyebrow--plain" style="color:#8a6a3d">Cliente</span>
+        <h3 id="drawer-name" style="margin-top:6px">—</h3>
+        <p id="drawer-phone" class="mono" style="color:#6f6a60;margin-top:4px">—</p>
+      </div>
+      <button class="icon-btn" type="button" id="drawer-close" aria-label="Cerrar detalle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="drawer__body" id="drawer-body"></div>
+    <div class="drawer__foot" id="drawer-foot"></div>
+  </aside>
+
+  <div id="modal-root"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
