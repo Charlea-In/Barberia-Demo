@@ -6,6 +6,8 @@ Sitio web y panel de administración para una barbería. Funciona como sitio est
 - **Panel privado:** resumen del negocio, agenda, clientes, ingresos, gastos, equipo, catálogo de servicios y ajustes.
 - **Modo demo:** si aún no conectas Google Sheets, todo funciona con datos locales en el navegador.
 
+**Demo publicada:** <https://charlea-in.github.io/Barberia-Demo/>
+
 ---
 
 ## 1. Ver la demo en local
@@ -92,6 +94,8 @@ El repositorio incluye `.github/workflows/pages.yml`. Si prefieres Actions:
 ### Después de publicar
 
 Actualiza la URL del Web App en `js/config.js` y vuelve a subir el cambio. También puedes usar una URL relativa para el sitio, pero la API siempre debe ser la URL absoluta de Apps Script.
+
+> GitHub Pages cachea los archivos estáticos unos minutos. Los HTML enlazan CSS y JS con `?v=20261111`; al publicar cambios en esos archivos, sube ese número de versión en `index.html` y `admin.html` para que los visitantes reciban la versión nueva de inmediato.
 
 ---
 
