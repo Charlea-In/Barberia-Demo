@@ -218,7 +218,10 @@
   /* ---------- Reserva ---------- */
   function nextOpenDate() {
     const today = U.todayISO();
-    for (let i = 0; i <= 21; i++) {
+    const { closeMin, slotMinutes, leadMinutes } = S.schedule;
+    // Si ya no alcanza a empezar ningún turno hoy, la reserva arranca mañana.
+    const start = U.nowMinutes() + (leadMinutes || 0) >= closeMin - (slotMinutes || 30) ? 1 : 0;
+    for (let i = start; i <= 21; i++) {
       const iso = U.addDays(today, i);
       if (!S.isClosed(iso)) return iso;
     }
