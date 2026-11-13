@@ -27,7 +27,7 @@ jobs:
       - name: Preparar sitio estático
         run: |
           mkdir -p _site
-          cp -r index.html admin.html css js assets .nojekyll _site/
+          cp -r index.html admin.html barbero.html css js assets .nojekyll _site/
 
       - name: Configurar Pages
         uses: actions/configure-pages@v5
