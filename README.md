@@ -4,6 +4,7 @@ Sitio web y panel de administración para una barbería. Funciona como sitio est
 
 - **Sitio público:** presentación, servicios, barberos, reserva de citas y consulta/cancelación con el teléfono.
 - **Panel privado:** resumen del negocio, agenda, clientes, ingresos, gastos, equipo, catálogo de servicios y ajustes.
+- **Jornada por barbero:** reloj de corte en vivo, confirmaciones, ingresos y comisión estimada de cada barbero, con tiempo promedio real por servicio.
 - **Modo demo:** si aún no conectas Google Sheets, todo funciona con datos locales en el navegador.
 
 **Demo publicada:** <https://charlea-in.github.io/Barberia-Demo/>

@@ -240,6 +240,9 @@
               else estado = rnd() < 0.3 ? "confirmada" : "pendiente";
 
               const id = `apt-${offset}-${barber.id.slice(-4)}-${t}`;
+              const realMin = estado === "completada" ? Math.max(5, svc.duracion_min + randInt(-4, 9)) : 0;
+              const inicio = U.timeFromMinutes(t);
+              const fin = U.timeFromMinutes(t + realMin);
               const appt = {
                 id,
                 fecha: iso,
@@ -257,6 +260,9 @@
                 notas: rnd() < 0.12 ? "Cliente frecuente. Café sin azúcar." : "",
                 creado_en: `${U.addDays(iso, -randInt(1, 12))}T${U.timeFromMinutes(randInt(9 * 60, 20 * 60))}:00`,
                 origen: rnd() < 0.55 ? "web" : "mostrador",
+                inicio_en: estado === "completada" ? `${iso}T${inicio}:00` : "",
+                fin_en: estado === "completada" ? `${iso}T${fin}:00` : "",
+                duracion_real_min: realMin,
               };
               appointments.push(appt);
 
@@ -512,6 +518,7 @@
         estado: input.estado || "pendiente",
         origen: input.origen || "admin",
         creado_en: input.creado_en || new Date().toISOString(),
+        duracion_real_min: Number(input.duracion_real_min) || 0,
       });
     }
 
@@ -601,7 +608,19 @@
     if (!appt) throw new Error("Cita no encontrada.");
     appt.estado = payload.estado;
 
+    // Datos del cronómetro de corte.
+    if (payload.inicio_en !== undefined) appt.inicio_en = payload.inicio_en;
+    if (payload.fin_en !== undefined) appt.fin_en = payload.fin_en;
+    if (payload.duracion_real_min !== undefined) appt.duracion_real_min = Number(payload.duracion_real_min) || 0;
+
     if (payload.estado === "completada") {
+      if (!appt.fin_en) appt.fin_en = new Date().toISOString();
+      if (!Number(appt.duracion_real_min) && appt.inicio_en) {
+        const start = new Date(appt.inicio_en).getTime();
+        if (!Number.isNaN(start)) {
+          appt.duracion_real_min = Math.max(1, Math.round((Date.now() - start) / 60000));
+        }
+      }
       let income = db.incomes.find((i) => i.cita_id === appt.id);
       if (!income) {
         income = {
@@ -726,9 +745,10 @@
       return request("adminDelete", adminPayload({ entity, id }));
     },
 
-    async setStatus(id, estado, metodo_pago) {
-      if (DEMO) return demoSetStatus({ id, estado, metodo_pago });
-      return request("setStatus", adminPayload({ id, estado, metodo_pago }));
+    async setStatus(id, estado, metodo_pago, extra = {}) {
+      const payload = { id, estado, metodo_pago, ...extra };
+      if (DEMO) return demoSetStatus(payload);
+      return request("setStatus", adminPayload(payload));
     },
 
     resetDemo() {

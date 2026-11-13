@@ -41,6 +41,7 @@ const HEADERS = {
     "id", "fecha", "hora", "cliente_id", "cliente_nombre", "cliente_telefono",
     "servicio_id", "servicio_nombre", "barbero_id", "barbero_nombre",
     "precio", "duracion_min", "estado", "notas", "creado_en", "origen",
+    "inicio_en", "fin_en", "duracion_real_min",
   ],
   incomes: ["id", "fecha", "monto", "categoria", "descripcion", "cita_id", "metodo_pago", "barbero_id", "creado_en"],
   expenses: ["id", "fecha", "monto", "categoria", "descripcion", "metodo_pago", "creado_en"],
@@ -53,7 +54,7 @@ const TEXT_COLUMNS = {
   services: [],
   barbers: [],
   clients: ["creado_en", "ultima_visita"],
-  appointments: ["fecha", "hora", "creado_en"],
+  appointments: ["fecha", "hora", "creado_en", "inicio_en", "fin_en"],
   incomes: ["fecha", "creado_en"],
   expenses: ["fecha", "creado_en"],
 };
@@ -90,7 +91,7 @@ const DEFAULTS = {
   ],
 };
 
-const STATUSES = ["pendiente", "confirmada", "completada", "cancelada", "no_asistio"];
+const STATUSES = ["pendiente", "confirmada", "en_curso", "completada", "cancelada", "no_asistio"];
 const PREFIXES = { services: "srv", barbers: "brb", clients: "cl", appointments: "apt", incomes: "inc", expenses: "exp" };
 
 /* ============================================================
@@ -150,6 +151,17 @@ function configurarClave(clave) {
   if (value.length < 6) throw new Error("Usa una clave de al menos 6 caracteres.");
   PropertiesService.getScriptProperties().setProperty("ADMIN_KEY", value);
   Logger.log("✅ Clave del panel actualizada.");
+}
+
+/**
+ * Agrega columnas nuevas a las hojas existentes sin borrar datos.
+ * Ejecútala después de actualizar Code.gs (por ejemplo, para el
+ * cronómetro de cortes: inicio_en, fin_en y duracion_real_min).
+ */
+function migrar() {
+  const ss = getSpreadsheet_();
+  Object.keys(HEADERS).forEach((key) => ensureSheet_(ss, key));
+  Logger.log("✅ Hojas actualizadas con los encabezados más recientes.");
 }
 
 /** Comprueba que la hoja y la clave estén listas. */
@@ -418,6 +430,9 @@ function adminSave_(payload) {
       estado: input.estado || "pendiente",
       origen: input.origen || "admin",
       creado_en: input.creado_en || new Date().toISOString(),
+      inicio_en: timestamp_(input.inicio_en),
+      fin_en: timestamp_(input.fin_en),
+      duracion_real_min: Number(input.duracion_real_min) || 0,
     });
   }
 
@@ -522,6 +537,20 @@ function setStatus_(payload) {
   if (!appt) throw new Error("Cita no encontrada.");
 
   appt.estado = estado;
+  if (payload.inicio_en !== undefined) appt.inicio_en = timestamp_(payload.inicio_en);
+  if (payload.fin_en !== undefined) appt.fin_en = timestamp_(payload.fin_en);
+  if (payload.duracion_real_min !== undefined) appt.duracion_real_min = Number(payload.duracion_real_min) || 0;
+
+  if (estado === "completada") {
+    if (!appt.fin_en) appt.fin_en = new Date().toISOString();
+    if (!Number(appt.duracion_real_min) && appt.inicio_en) {
+      const start = new Date(appt.inicio_en).getTime();
+      if (!isNaN(start)) {
+        appt.duracion_real_min = Math.max(1, Math.round((Date.now() - start) / 60000));
+      }
+    }
+  }
+
   writeRecord_("appointments", appt);
 
   if (estado === "completada") {
@@ -934,6 +963,9 @@ function normalize_(entity, raw) {
       notas: str_(raw.notas),
       creado_en: timestamp_(raw.creado_en),
       origen: str_(raw.origen) || "web",
+      inicio_en: timestamp_(raw.inicio_en),
+      fin_en: timestamp_(raw.fin_en),
+      duracion_real_min: num_(raw.duracion_real_min, 0),
     };
   }
 

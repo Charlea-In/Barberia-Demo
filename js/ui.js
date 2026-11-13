@@ -146,6 +146,7 @@
   const STATUS = {
     pendiente: { label: "Pendiente" },
     confirmada: { label: "Confirmada" },
+    en_curso: { label: "En curso" },
     completada: { label: "Completada" },
     cancelada: { label: "Cancelada" },
     no_asistio: { label: "No asistió" },

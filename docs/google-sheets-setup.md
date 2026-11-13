@@ -193,7 +193,7 @@ También puedes usar el workflow incluido en `.github/workflows/pages.yml`:
 | `Servicios` | `id`, `nombre`, `descripcion`, `duracion_min`, `precio`, `activo`, `orden` |
 | `Barberos` | `id`, `nombre`, `rol`, `especialidad`, `telefono`, `comision_pct`, `activo`, `color` |
 | `Clientes` | `id`, `nombre`, `telefono`, `email`, `notas`, `creado_en`, `total_citas`, `total_gastado`, `ultima_visita` |
-| `Citas` | `id`, `fecha`, `hora`, `cliente_id`, `cliente_nombre`, `cliente_telefono`, `servicio_id`, `servicio_nombre`, `barbero_id`, `barbero_nombre`, `precio`, `duracion_min`, `estado`, `notas`, `creado_en`, `origen` |
+| `Citas` | `id`, `fecha`, `hora`, `cliente_id`, `cliente_nombre`, `cliente_telefono`, `servicio_id`, `servicio_nombre`, `barbero_id`, `barbero_nombre`, `precio`, `duracion_min`, `estado`, `notas`, `creado_en`, `origen`, `inicio_en`, `fin_en`, `duracion_real_min` |
 | `Ingresos` | `id`, `fecha`, `monto`, `categoria`, `descripcion`, `cita_id`, `metodo_pago`, `barbero_id`, `creado_en` |
 | `Gastos` | `id`, `fecha`, `monto`, `categoria`, `descripcion`, `metodo_pago`, `creado_en` |
 
@@ -218,6 +218,8 @@ Cada vez que modifiques `Code.gs`:
 5. Pulsa **Implementar**.
 
 La URL `/exec` se mantiene. Si creas una implementación nueva, cambia la URL en `js/config.js`.
+
+> Si esta actualización agrega columnas nuevas (por ejemplo el cronómetro de cortes: `inicio_en`, `fin_en` y `duracion_real_min`), ejecuta también **`migrar()`** una vez desde el editor. Agrega los encabezados que falten sin borrar los datos existentes.
 
 ---
 

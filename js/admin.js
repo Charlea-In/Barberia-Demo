@@ -11,6 +11,7 @@
   const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const VIEW_TITLES = {
     resumen: "Resumen",
+    jornada: "Jornada",
     citas: "Citas",
     clientes: "Clientes",
     ingresos: "Ingresos",
@@ -34,7 +35,12 @@
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5l14 14M19 5L5 19"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
     eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.5v13l11-6.5z"/></svg>',
+    stop: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   };
+
+  const JORNADA_KEY = "norte_jornada_barber";
 
   const A = {
     key: S.getAdminKey(),
@@ -42,6 +48,9 @@
     view: "resumen",
     filters: {},
     drawerClientId: null,
+    jornada: {
+      barberId: sessionStorage.getItem(JORNADA_KEY) || "",
+    },
   };
 
   document.addEventListener("DOMContentLoaded", init);
@@ -49,6 +58,7 @@
   async function init() {
     resetFilters();
     wire();
+    startTicker();
     $("#today-label").textContent = U.formatDate(U.todayISO(), "long");
     $("#year") && ($("#year").textContent = new Date().getFullYear());
 
@@ -159,6 +169,7 @@
     if (!A.data) return;
     const renderers = {
       resumen: renderResumen,
+      jornada: renderJornada,
       citas: renderCitas,
       clientes: renderClientes,
       ingresos: renderIngresos,
@@ -444,6 +455,337 @@
         <span>Ingresos del periodo <b style="color:#171614">${money(inc14)}</b></span>
         <span>Gastos del periodo <b style="color:#171614">${money(exp14)}</b></span>
         <span>Balance <b style="color:${inc14 - exp14 >= 0 ? "#2f6a46" : "#9b3f36"}">${money(inc14 - exp14)}</b></span>
+      </div>`;
+  }
+
+  /* ---------- JORNADA / BARBEROS ---------- */
+  function barberById(id) {
+    return A.data.barbers.find((b) => b.id === id) || null;
+  }
+
+  function jornadaBarber() {
+    const active = A.data.barbers.filter((b) => b.activo !== false);
+    const list = active.length ? active : A.data.barbers;
+    if (!list.length) return null;
+    return list.find((b) => b.id === A.jornada.barberId) || list[0];
+  }
+
+  function realMinutes(appt) {
+    const real = Number(appt.duracion_real_min);
+    return real > 0 ? real : Number(appt.duracion_min) || 0;
+  }
+
+  function avgMinutes(list) {
+    const values = (list || [])
+      .filter((a) => a.estado === "completada")
+      .map(realMinutes)
+      .filter((n) => n > 0);
+    if (!values.length) return null;
+    return Math.round(values.reduce((acc, n) => acc + n, 0) / values.length);
+  }
+
+  function clockText(seconds) {
+    const total = Math.max(0, Math.floor(seconds));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  }
+
+  function elapsedSeconds(iso) {
+    const start = new Date(iso || "").getTime();
+    if (Number.isNaN(start)) return 0;
+    return Math.max(0, Math.floor((Date.now() - start) / 1000));
+  }
+
+  function renderJornada() {
+    const barber = jornadaBarber();
+    if (!barber) {
+      return `<div class="view-head"><div><h1 class="view-head__title">Jornada</h1><p class="view-head__sub">Agrega un barbero para empezar.</p></div></div>
+        <div class="card"><div class="table-empty">Todavía no hay barberos en el equipo.</div></div>`;
+    }
+
+    const today = U.todayISO();
+    const now = `${today}T${U.timeFromMinutes(U.nowMinutes())}`;
+    const allToday = A.data.appointments.filter((a) => a.fecha === today);
+    const mine = allToday.filter((a) => a.barbero_id === barber.id);
+    const activeMine = mine.filter((a) => !["cancelada", "no_asistio"].includes(a.estado));
+    const running = mine.find((a) => a.estado === "en_curso") || null;
+    const completed = mine.filter((a) => a.estado === "completada");
+    const pendingToday = mine.filter((a) => a.estado === "pendiente");
+    const next =
+      mine.find((a) => ["pendiente", "confirmada"].includes(a.estado) && `${a.fecha}T${a.hora}` >= now) ||
+      mine.find((a) => ["pendiente", "confirmada"].includes(a.estado)) ||
+      null;
+
+    const incomesToday = A.data.incomes.filter((i) => i.fecha === today && i.barbero_id === barber.id);
+    const serviceIncome = incomesToday.filter((i) => i.categoria === "Servicio");
+    const incTotal = U.sum(incomesToday, "monto");
+    const commission = (U.sum(serviceIncome, "monto") * (Number(barber.comision_pct) || 0)) / 100;
+
+    const last30 = A.data.appointments.filter(
+      (a) => a.barbero_id === barber.id && a.fecha >= U.addDays(today, -30) && a.fecha <= today
+    );
+    const timed = last30.filter((a) => a.estado === "completada" && Number(a.duracion_real_min) > 0);
+    const avg = avgMinutes(last30);
+
+    const team = (A.data.barbers.filter((b) => b.activo !== false).length
+      ? A.data.barbers.filter((b) => b.activo !== false)
+      : A.data.barbers
+    )
+      .map((b) => {
+        const list = allToday.filter((a) => a.barbero_id === b.id);
+        const live = list.find((a) => a.estado === "en_curso");
+        const done = list.filter((a) => a.estado === "completada").length;
+        const bAvg = avgMinutes(
+          A.data.appointments.filter((a) => a.barbero_id === b.id && a.fecha >= U.addDays(today, -30) && a.fecha <= today)
+        );
+        return `<button class="jornada-team__card ${b.id === barber.id ? "is-active" : ""}" type="button" data-jornada-barber="${esc(b.id)}">
+          <span class="avatar" style="background:${esc(b.color || "#c98a4b")}">${U.initials(b.nombre)}</span>
+          <span class="jornada-team__meta">
+            <span class="jornada-team__name">${esc(b.nombre)}</span>
+            <span class="jornada-team__state">
+              <i class="dot-live ${live ? "dot-live--busy" : ""}"></i>
+              ${
+                live
+                  ? `Cortando · <b data-live-elapsed="${esc(live.inicio_en)}">00:00</b>`
+                  : `${done} ${done === 1 ? "corte" : "cortes"} hoy · ${bAvg ? bAvg + " min prom." : "sin medición"}`
+              }
+            </span>
+          </span>
+        </button>`;
+      })
+      .join("");
+
+    const timerHtml = running
+      ? `<div class="timer-card">
+          <div class="timer-card__head">
+            <span class="timer-card__eyebrow">En curso · ${esc(barber.nombre)}</span>
+            <span class="timer-card__live">● En vivo</span>
+          </div>
+          <div class="timer-card__client">${esc(running.cliente_nombre)}</div>
+          <div class="timer-card__service">${esc(running.servicio_nombre)} · ${running.duracion_min} min programados · inició ${esc(running.hora)}</div>
+          <div class="timer-display" data-timer-start="${esc(running.inicio_en)}">00:00</div>
+          <div class="timer-meta">
+            <span>Programado <b>${running.duracion_min} min</b></span>
+            <span data-timer-delta="${esc(running.inicio_en)}" data-timer-expected="${running.duracion_min}">—</span>
+          </div>
+          <div class="timer-track"><span data-timer-progress="${esc(running.inicio_en)}" data-timer-expected="${running.duracion_min}" style="width:0%"></span></div>
+          <div class="timer-actions">
+            <button class="btn-admin btn-admin--primary" type="button" data-action="stop-cut" data-id="${esc(running.id)}">Terminar y cobrar</button>
+            <button class="btn-admin" type="button" data-action="cancel-timer" data-id="${esc(running.id)}">Detener reloj</button>
+          </div>
+        </div>`
+      : `<div class="timer-card timer-card--idle">
+          <div class="timer-card__head">
+            <span class="timer-card__eyebrow">Reloj de corte · ${esc(barber.nombre)}</span>
+            <span class="timer-card__live">Listo</span>
+          </div>
+          <div class="timer-card__client">${next ? esc(next.cliente_nombre) : "Sin corte en curso"}</div>
+          <div class="timer-card__service">${
+            next
+              ? `${esc(next.servicio_nombre)} · ${esc(next.hora)} · ${next.duracion_min} min`
+              : "Selecciona una cita de la agenda para iniciar el reloj."
+          }</div>
+          <div class="timer-display timer-display--idle">--:--</div>
+          <div class="timer-meta">${next ? "Siguiente cita" : "Sin citas pendientes hoy"}</div>
+          <div class="timer-actions">
+            ${next ? `<button class="btn-admin btn-admin--primary" type="button" data-action="start-cut" data-id="${esc(next.id)}">Iniciar corte</button>` : ""}
+            <button class="btn-admin" type="button" data-action="new-appointment-barber">Nueva cita</button>
+          </div>
+        </div>`;
+
+    const agendaRows = mine.length
+      ? mine
+          .map((a) => {
+            const actions = [];
+            if (a.estado === "pendiente") actions.push(miniBtn("confirm-appointment", a.id, ICON.check, "Confirmar cita"));
+            if (["pendiente", "confirmada"].includes(a.estado)) {
+              actions.push(miniBtn("start-cut", a.id, ICON.play, "Iniciar reloj de corte", "mini-btn--primary"));
+            }
+            if (a.estado === "en_curso") {
+              actions.push(miniBtn("stop-cut", a.id, ICON.stop, "Terminar y cobrar", "mini-btn--primary"));
+            }
+            actions.push(miniBtn("edit-appointment", a.id, ICON.edit, "Editar cita"));
+            actions.push(miniBtn("delete-appointment", a.id, ICON.trash, "Eliminar cita", "mini-btn--danger"));
+            const real = Number(a.duracion_real_min);
+            return `<div class="jornada-row ${a.estado === "en_curso" ? "is-running" : ""}">
+              <div class="jornada-row__time">${esc(a.hora)}</div>
+              <div class="jornada-row__main">
+                <div class="jornada-row__client">${esc(a.cliente_nombre)}</div>
+                <div class="jornada-row__meta">${esc(a.servicio_nombre)} · ${a.duracion_min} min${real ? ` · real ${real} min` : ""}</div>
+              </div>
+              <div class="jornada-row__side">
+                ${U.statusPill(a.estado, true)}
+                <div class="row-actions">${actions.join("")}</div>
+              </div>
+            </div>`;
+          })
+          .join("")
+      : `<div class="jornada-empty">No hay citas para ${esc(barber.nombre)} hoy.<br><button class="link-arrow" type="button" data-action="new-appointment-barber" style="margin-top:10px;color:#8a6a3d">Agendar una cita</button></div>`;
+
+    const upcomingPending = A.data.appointments
+      .filter(
+        (a) =>
+          a.barbero_id === barber.id &&
+          a.estado === "pendiente" &&
+          a.fecha >= today &&
+          a.fecha <= U.addDays(today, 7)
+      )
+      .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora))
+      .slice(0, 6);
+
+    const incomeRows = incomesToday.length
+      ? [...incomesToday]
+          .sort((a, b) => String(b.creado_en).localeCompare(String(a.creado_en)))
+          .slice(0, 8)
+          .map(
+            (i) => `<div class="money-row">
+              <div class="money-row__main">
+                <div class="money-row__title">${esc(i.descripcion || i.categoria)}</div>
+                <div class="money-row__meta">${esc(i.categoria)} · ${esc(i.metodo_pago || "Efectivo")}</div>
+              </div>
+              <div class="money-row__amount">${money(i.monto)}</div>
+              ${miniBtn("delete-income", i.id, ICON.trash, "Eliminar ingreso", "mini-btn--danger")}
+            </div>`
+          )
+          .join("")
+      : `<div class="jornada-empty">Sin ingresos registrados hoy para ${esc(barber.nombre)}.</div>`;
+
+    const byService = {};
+    last30
+      .filter((a) => a.estado === "completada")
+      .forEach((a) => {
+        const key = a.servicio_nombre || "Servicio";
+        if (!byService[key]) byService[key] = { name: key, total: 0, count: 0 };
+        byService[key].total += realMinutes(a);
+        byService[key].count += 1;
+      });
+    const serviceRows = Object.values(byService)
+      .map((s) => ({ ...s, avg: Math.round(s.total / s.count) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    const maxServiceAvg = Math.max(1, ...serviceRows.map((s) => s.avg));
+
+    return `
+      <div class="view-head">
+        <div>
+          <h1 class="view-head__title">Jornada</h1>
+          <p class="view-head__sub">Reloj de corte, confirmaciones e ingresos de cada barbero.</p>
+        </div>
+        <div class="view-head__actions">
+          <button class="btn-admin" type="button" data-action="new-income-barber">Registrar ingreso</button>
+          <button class="btn-admin btn-admin--primary" type="button" data-action="new-appointment-barber">Nueva cita</button>
+        </div>
+      </div>
+
+      <div class="jornada-team">${team}</div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi__label">Cortes del día</div>
+          <div class="kpi__value">${completed.length}</div>
+          <div class="kpi__meta">${activeMine.length} en agenda · ${pendingToday.length} por confirmar</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Ingresos del barbero</div>
+          <div class="kpi__value">${money(incTotal)}</div>
+          <div class="kpi__meta">${incomesToday.length} movimiento${incomesToday.length === 1 ? "" : "s"} hoy</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Comisión estimada</div>
+          <div class="kpi__value" style="color:#8a5a12">${money(commission)}</div>
+          <div class="kpi__meta">${Number(barber.comision_pct) || 0}% sobre servicios</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Tiempo promedio</div>
+          <div class="kpi__value">${avg ? avg + " <span style='font-size:14px;letter-spacing:.06em'>min</span>" : "—"}</div>
+          <div class="kpi__meta">${timed.length} cortes medidos · 30 días</div>
+        </div>
+      </div>
+
+      <div class="jornada-grid">
+        <div class="jornada-col">
+          ${timerHtml}
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <div class="card__title">Agenda de hoy</div>
+                <div class="card__sub">${esc(barber.nombre)} · ${activeMine.length} citas activas</div>
+              </div>
+              <button class="mini-btn" type="button" data-action="new-appointment-barber">Agregar</button>
+            </div>
+            ${agendaRows}
+          </div>
+        </div>
+
+        <div class="jornada-col">
+          <div class="card">
+            <div class="card__head">
+              <div class="card__title">Por confirmar</div>
+              <span class="card__sub">Próximos 7 días</span>
+            </div>
+            ${
+              upcomingPending.length
+                ? `<div class="agenda">${upcomingPending
+                    .map(
+                      (a) => `<div class="agenda__item">
+                        <div class="agenda__time" style="font-size:16px">${esc(a.hora)}</div>
+                        <div class="agenda__main">
+                          <div class="agenda__client">${esc(a.cliente_nombre)}</div>
+                          <div class="agenda__service">${U.relativeDay(a.fecha)} · ${esc(a.servicio_nombre)}</div>
+                        </div>
+                        <div class="agenda__side">
+                          ${miniBtn("confirm-appointment", a.id, ICON.check, "Confirmar cita", "mini-btn--primary")}
+                          ${miniBtn("cancel-appointment", a.id, ICON.x, "Cancelar cita", "mini-btn--danger")}
+                        </div>
+                      </div>`
+                    )
+                    .join("")}</div>`
+                : `<div class="jornada-empty">Sin confirmaciones pendientes.</div>`
+            }
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <div class="card__title">Ingresos de hoy</div>
+                <div class="card__sub">${money(incTotal)} · ${esc(barber.nombre)}</div>
+              </div>
+              <button class="mini-btn" type="button" data-action="new-income-barber">Registrar</button>
+            </div>
+            ${incomeRows}
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <div class="card__title">Tiempo real por servicio</div>
+                <div class="card__sub">Últimos 30 días</div>
+              </div>
+            </div>
+            <div class="card__body">
+              ${
+                serviceRows.length
+                  ? `<div class="rank-list">${serviceRows
+                      .map(
+                        (s) => `<div class="rank-row">
+                          <span class="rank-num">${String(s.count).padStart(2, "0")}</span>
+                          <div>
+                            <div class="rank-name">${esc(s.name)}</div>
+                            <div class="rank-meta">${s.count} corte${s.count === 1 ? "" : "s"}</div>
+                            <div class="rank-bar"><span style="width:${Math.round((s.avg / maxServiceAvg) * 100)}%"></span></div>
+                          </div>
+                          <span class="rank-value">${s.avg}<span style="font-size:10px;font-family:var(--font-mono);letter-spacing:.08em"> min</span></span>
+                        </div>`
+                      )
+                      .join("")}</div>`
+                  : `<div class="jornada-empty">Aún no hay cortes medidos. Usa el reloj para empezar a comparar tiempos.</div>`
+              }
+            </div>
+          </div>
+        </div>
       </div>`;
   }
 
@@ -773,6 +1115,14 @@
         ${A.data.barbers
           .map((b) => {
             const list = completed.filter((a) => a.barbero_id === b.id);
+            const avg = avgMinutes(
+              A.data.appointments.filter(
+                (a) => a.barbero_id === b.id && a.fecha >= U.addDays(U.todayISO(), -30)
+              )
+            );
+            const live = A.data.appointments.find(
+              (a) => a.barbero_id === b.id && a.estado === "en_curso"
+            );
             return `<div class="barber-admin-card" style="${b.activo === false ? "opacity:.6" : ""}">
               <div class="barber-admin-card__top">
                 <span class="avatar avatar--lg" style="background:${esc(b.color || "#c98a4b")}">${U.initials(b.nombre)}</span>
@@ -785,9 +1135,16 @@
               <div class="barber-admin-card__stats">
                 <div class="barber-admin-card__stat"><span>Citas mes</span><b>${list.length}</b></div>
                 <div class="barber-admin-card__stat"><span>Ingresos</span><b>${money(U.sum(list, "precio"))}</b></div>
+                <div class="barber-admin-card__stat"><span>Prom. corte</span><b>${avg ? avg + "'" : "—"}</b></div>
                 <div class="barber-admin-card__stat"><span>Comisión</span><b>${Number(b.comision_pct) || 0}%</b></div>
               </div>
+              ${
+                live
+                  ? `<div class="barber-live"><i class="dot-live dot-live--busy"></i> Cortando ahora · ${esc(live.cliente_nombre)}</div>`
+                  : ""
+              }
               <div class="barber-admin-card__actions">
+                <button class="mini-btn mini-btn--primary" type="button" data-action="open-jornada" data-id="${esc(b.id)}">Abrir jornada</button>
                 ${miniBtn("edit-barber", b.id, ICON.edit, "Editar barbero")}
                 <button class="mini-btn" type="button" data-action="toggle-barber" data-id="${esc(b.id)}">${b.activo === false ? "Activar" : "Desactivar"}</button>
                 ${miniBtn("delete-barber", b.id, ICON.trash, "Eliminar barbero", "mini-btn--danger")}
@@ -997,9 +1354,10 @@
   }
 
   /* ---------- FORMULARIOS ---------- */
-  function openAppointmentForm(id, presetClientId) {
+  function openAppointmentForm(id, presetClientId, presetBarberId) {
     const appt = id ? apptById(id) : null;
     const presetClient = presetClientId ? clientById(presetClientId) : null;
+    const defaultBarber = presetBarberId || (A.view === "jornada" && jornadaBarber() ? jornadaBarber().id : "");
     const services = A.data.services;
     const barbers = A.data.barbers;
 
@@ -1016,10 +1374,19 @@
       { name: "cliente_nombre", label: "Cliente", required: true, value: appt ? appt.cliente_nombre : presetClient ? presetClient.nombre : "", placeholder: "Nombre completo" },
       { name: "cliente_telefono", label: "Teléfono", type: "tel", required: true, value: appt ? appt.cliente_telefono : presetClient ? presetClient.telefono : "", placeholder: "55 1234 5678" },
       { name: "servicio_id", label: "Servicio", type: "select", required: true, options: services.map((s) => ({ value: s.id, label: `${s.nombre} · ${money(s.precio)}` })), value: appt ? appt.servicio_id : services[0].id },
-      { name: "barbero_id", label: "Barbero", type: "select", required: true, options: barbers.map((b) => ({ value: b.id, label: b.nombre })), value: appt ? appt.barbero_id : barbers[0].id },
+      { name: "barbero_id", label: "Barbero", type: "select", required: true, options: barbers.map((b) => ({ value: b.id, label: b.nombre })), value: appt ? appt.barbero_id : defaultBarber || barbers[0].id },
       { name: "fecha", label: "Fecha", type: "date", required: true, value: appt ? appt.fecha : U.todayISO() },
       { name: "hora", label: "Hora", type: "time", required: true, value: appt ? appt.hora : "10:00" },
-      { name: "estado", label: "Estado", type: "select", options: STATUS_OPTIONS, value: appt ? appt.estado : "pendiente" },
+      {
+        name: "estado",
+        label: "Estado",
+        type: "select",
+        options:
+          appt && appt.estado === "en_curso"
+            ? [{ value: "en_curso", label: "En curso" }, ...STATUS_OPTIONS]
+            : STATUS_OPTIONS,
+        value: appt ? appt.estado : "pendiente",
+      },
       { name: "notas", label: "Notas", type: "textarea", full: true, value: appt ? appt.notas || "" : "" },
     ];
 
@@ -1063,8 +1430,9 @@
     });
   }
 
-  function openIncomeForm(id) {
+  function openIncomeForm(id, presetBarberId) {
     const item = id ? A.data.incomes.find((i) => i.id === id) : null;
+    const defaultBarber = presetBarberId || (A.view === "jornada" && jornadaBarber() ? jornadaBarber().id : "");
     U.formModal({
       title: item ? "Editar ingreso" : "Registrar ingreso",
       subtitle: "Servicios, productos, propinas u otros.",
@@ -1074,7 +1442,7 @@
         { name: "categoria", label: "Categoría", type: "select", options: ["Servicio", "Productos", "Propinas", "Otros"], value: item ? item.categoria : "Servicio" },
         { name: "metodo_pago", label: "Método de pago", type: "select", options: PAYMENT_OPTIONS, value: item ? item.metodo_pago : "Efectivo" },
         { name: "descripcion", label: "Descripción", full: true, value: item ? item.descripcion || "" : "", placeholder: "Ej. Pomada mate, corte + barba..." },
-        { name: "barbero_id", label: "Barbero (opcional)", type: "select", options: [{ value: "", label: "Sin asignar" }, ...A.data.barbers.map((b) => ({ value: b.id, label: b.nombre }))], value: item ? item.barbero_id || "" : "" },
+        { name: "barbero_id", label: "Barbero (opcional)", type: "select", options: [{ value: "", label: "Sin asignar" }, ...A.data.barbers.map((b) => ({ value: b.id, label: b.nombre }))], value: item ? item.barbero_id || "" : defaultBarber },
       ],
       submitText: item ? "Guardar cambios" : "Registrar",
       onSubmit: async (values, { close }) => {
@@ -1165,6 +1533,30 @@
       switch (action) {
         case "new-appointment":
           openAppointmentForm(null, el && el.dataset.clientId);
+          break;
+        case "new-appointment-barber":
+          openAppointmentForm(null, null, el && el.dataset.barberId);
+          break;
+        case "new-income-barber":
+          openIncomeForm(null, el && el.dataset.barberId);
+          break;
+        case "open-jornada": {
+          A.jornada.barberId = id;
+          sessionStorage.setItem(JORNADA_KEY, id);
+          setView("jornada");
+          break;
+        }
+        case "start-cut":
+          await startCut(id);
+          break;
+        case "stop-cut":
+          await completeAppointment(id);
+          break;
+        case "cancel-timer":
+          await cancelTimer(id);
+          break;
+        case "confirm-appointment":
+          await confirmAppointment(id);
           break;
         case "edit-appointment":
           openAppointmentForm(id);
@@ -1276,28 +1668,138 @@
   async function completeAppointment(id) {
     const appt = apptById(id);
     if (!appt) return;
+    const measured = appt.inicio_en ? Math.max(1, Math.round((Date.now() - new Date(appt.inicio_en).getTime()) / 60000)) : null;
+    const fields = [
+      {
+        name: "metodo_pago",
+        label: "Método de pago",
+        type: "select",
+        options: PAYMENT_OPTIONS,
+        value: "Efectivo",
+      },
+    ];
+    if (measured !== null || Number(appt.duracion_real_min) > 0) {
+      fields.push({
+        name: "duracion_real_min",
+        label: "Tiempo real de corte (min)",
+        type: "number",
+        min: 1,
+        step: 1,
+        value: measured || Number(appt.duracion_real_min),
+      });
+    }
     U.formModal({
       title: "Registrar cobro",
-      subtitle: `${appt.cliente_nombre} · ${appt.servicio_nombre} · ${money(appt.precio)}`,
-      fields: [
-        {
-          name: "metodo_pago",
-          label: "Método de pago",
-          type: "select",
-          options: PAYMENT_OPTIONS,
-          value: "Efectivo",
-          full: true,
-        },
-      ],
+      subtitle: `${appt.cliente_nombre} · ${appt.servicio_nombre} · ${money(appt.precio)}${
+        measured !== null ? ` · reloj: ${measured} min` : ""
+      }`,
+      fields,
       submitText: "Marcar completada",
       onSubmit: async (values, { close }) => {
-        await S.setStatus(id, "completada", values.metodo_pago);
+        const extra = {};
+        if (values.duracion_real_min !== undefined && values.duracion_real_min !== "") {
+          extra.duracion_real_min = Number(values.duracion_real_min) || 0;
+        }
+        if (appt.inicio_en && !appt.fin_en) extra.fin_en = new Date().toISOString();
+        await S.setStatus(id, "completada", values.metodo_pago, extra);
         await loadData();
         renderView();
         if (A.drawerClientId) openDrawer(A.drawerClientId);
         close();
         U.toast("Cita completada e ingreso registrado.", "success");
       },
+    });
+  }
+
+  async function startCut(id) {
+    const appt = apptById(id);
+    if (!appt) return;
+    if (appt.fecha !== U.todayISO()) {
+      U.toast("El reloj solo se puede iniciar en citas de hoy.", "error");
+      return;
+    }
+    if (appt.estado === "en_curso") return;
+    if (!["pendiente", "confirmada"].includes(appt.estado)) {
+      U.toast("Esta cita ya no se puede iniciar.", "error");
+      return;
+    }
+    const running = A.data.appointments.find(
+      (a) => a.barbero_id === appt.barbero_id && a.estado === "en_curso" && a.id !== id
+    );
+    if (running) {
+      U.toast(`Primero termina el corte de ${running.cliente_nombre}.`, "error");
+      return;
+    }
+    await S.save("appointments", {
+      id,
+      estado: "en_curso",
+      inicio_en: new Date().toISOString(),
+      fin_en: "",
+      duracion_real_min: 0,
+    });
+    await loadData();
+    renderView();
+    U.toast("Reloj iniciado. ¡Buen corte!", "success");
+  }
+
+  async function cancelTimer(id) {
+    const appt = apptById(id);
+    if (!appt) return;
+    const ok = await U.confirmDialog({
+      title: "Detener reloj",
+      message: "La cita volverá a estado confirmada y no se guardará el tiempo medido.",
+      confirmText: "Detener",
+      danger: true,
+    });
+    if (!ok) return;
+    await S.save("appointments", {
+      id,
+      estado: "confirmada",
+      inicio_en: "",
+      fin_en: "",
+      duracion_real_min: 0,
+    });
+    await loadData();
+    renderView();
+    U.toast("Reloj detenido.", "success");
+  }
+
+  async function confirmAppointment(id) {
+    await S.setStatus(id, "confirmada");
+    await loadData();
+    renderView();
+    U.toast("Cita confirmada.", "success");
+  }
+
+  /* ---------- Reloj en vivo ---------- */
+  let tickerHandle = null;
+
+  function startTicker() {
+    if (tickerHandle) return;
+    tickerHandle = setInterval(tickTimers, 1000);
+  }
+
+  function tickTimers() {
+    if (A.view !== "jornada") return;
+    $$("[data-timer-start]").forEach((el) => {
+      el.textContent = clockText(elapsedSeconds(el.dataset.timerStart));
+    });
+    $$("[data-live-elapsed]").forEach((el) => {
+      el.textContent = clockText(elapsedSeconds(el.dataset.liveElapsed));
+    });
+    $$("[data-timer-delta]").forEach((el) => {
+      const secs = elapsedSeconds(el.dataset.timerDelta);
+      const expected = Number(el.dataset.timerExpected) || 0;
+      const diff = Math.floor(secs / 60) - expected;
+      el.textContent = diff >= 0 ? `+${diff} min sobre lo programado` : `${Math.abs(diff)} min restantes`;
+      el.classList.toggle("is-over", diff > 0);
+    });
+    $$("[data-timer-progress]").forEach((el) => {
+      const secs = elapsedSeconds(el.dataset.timerProgress);
+      const expected = (Number(el.dataset.timerExpected) || 1) * 60;
+      const pct = Math.min(100, Math.round((secs / expected) * 100));
+      el.style.width = pct + "%";
+      el.classList.toggle("is-over", secs > expected);
     });
   }
 
@@ -1437,6 +1939,13 @@
       const nav = event.target.closest("[data-view]");
       if (nav) {
         setView(nav.dataset.view);
+        return;
+      }
+      const jornadaCard = event.target.closest("[data-jornada-barber]");
+      if (jornadaCard) {
+        A.jornada.barberId = jornadaCard.dataset.jornadaBarber;
+        sessionStorage.setItem(JORNADA_KEY, A.jornada.barberId);
+        renderView();
         return;
       }
       const actionEl = event.target.closest("[data-action]");
