@@ -82,6 +82,26 @@
     };
   }
 
+  // Lo que puede ver el sitio público de un barbero (sin clave ni comisión).
+  function publicBarber(b) {
+    return {
+      id: b.id,
+      nombre: b.nombre,
+      rol: b.rol || "",
+      especialidad: b.especialidad || "",
+      activo: b.activo !== false,
+      color: b.color || "#C98A4B",
+    };
+  }
+
+  // Lo que ve el propio barbero en su panel.
+  function selfBarber(b) {
+    return {
+      ...publicBarber(b),
+      comision_pct: Number(b.comision_pct) || 0,
+    };
+  }
+
   function recomputeClient(db, clientId) {
     const client = db.clients.find((c) => c.id === clientId);
     if (!client) return;
@@ -347,7 +367,7 @@
     const db = loadDB();
     const data = {
       services: db.services.filter((s) => s.activo !== false).sort((a, b) => Number(a.orden) - Number(b.orden)),
-      barbers: db.barbers.filter((b) => b.activo !== false),
+      barbers: db.barbers.filter((b) => b.activo !== false).map(publicBarber),
       config: { ...db.config },
     };
     data.schedule = scheduleFrom(data.config);
@@ -462,6 +482,93 @@
     return { ok: true };
   }
 
+  /* ---------- Acceso de barberos (demo) ---------- */
+  function barberFromKey(db, clave) {
+    const value = String(clave || "").trim();
+    if (!value) throw new Error("Escribe tu clave personal.");
+    const barber = db.barbers.find(
+      (b) => b.activo !== false && String(b.clave || "").trim() === value
+    );
+    if (!barber) throw new Error("Clave incorrecta.");
+    return barber;
+  }
+
+  function scopedBarberData(db, barber) {
+    const since = U.addDays(U.todayISO(), -90);
+    const config = db.config || {};
+    return {
+      version: 1,
+      barber: selfBarber(barber),
+      services: db.services
+        .filter((s) => s.activo !== false)
+        .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0)),
+      config: {
+        nombre_negocio: config.nombre_negocio || C.brand.name,
+        moneda: config.moneda || C.currency.code,
+        hora_inicio: config.hora_inicio || C.schedule.open,
+        hora_fin: config.hora_fin || C.schedule.close,
+        dias_cerrados: config.dias_cerrados !== undefined ? config.dias_cerrados : C.schedule.closedDays.join(","),
+        slot_minutos: config.slot_minutos || String(C.schedule.slotMinutes),
+      },
+      appointments: db.appointments.filter(
+        (a) => a.barbero_id === barber.id && a.fecha >= since
+      ),
+      incomes: db.incomes.filter(
+        (i) => i.barbero_id === barber.id && i.fecha >= since
+      ),
+    };
+  }
+
+  function demoBarberLogin(payload) {
+    const db = loadDB();
+    const barber = barberFromKey(db, payload.clave);
+    return { barber: selfBarber(barber), data: scopedBarberData(db, barber) };
+  }
+
+  function demoBarberData(payload) {
+    const db = loadDB();
+    const barber = barberFromKey(db, payload.clave);
+    return scopedBarberData(db, barber);
+  }
+
+  function demoBarberSave(payload) {
+    const db = loadDB();
+    const barber = barberFromKey(db, payload.clave);
+    const entity = String(payload.entity || "");
+    if (entity !== "appointments" && entity !== "incomes") {
+      throw new Error("No puedes modificar esa sección.");
+    }
+    const record = { ...(payload.record || {}), barbero_id: barber.id, barbero_nombre: barber.nombre };
+
+    if (record.id) {
+      const list = entity === "appointments" ? db.appointments : db.incomes;
+      const existing = list.find((item) => item.id === record.id);
+      if (!existing || existing.barbero_id !== barber.id) throw new Error("Ese registro no es tuyo.");
+    }
+    return demoAdminSave({ entity, record });
+  }
+
+  function demoBarberDelete(payload) {
+    const db = loadDB();
+    const barber = barberFromKey(db, payload.clave);
+    const entity = String(payload.entity || "");
+    if (entity !== "appointments" && entity !== "incomes") {
+      throw new Error("No puedes modificar esa sección.");
+    }
+    const list = entity === "appointments" ? db.appointments : db.incomes;
+    const item = list.find((x) => x.id === payload.id);
+    if (!item || item.barbero_id !== barber.id) throw new Error("Ese registro no es tuyo.");
+    return demoAdminDelete({ entity, id: payload.id });
+  }
+
+  function demoBarberSetStatus(payload) {
+    const db = loadDB();
+    const barber = barberFromKey(db, payload.clave);
+    const appt = db.appointments.find((a) => a.id === payload.id);
+    if (!appt || appt.barbero_id !== barber.id) throw new Error("Esa cita no es tuya.");
+    return demoSetStatus(payload);
+  }
+
   function demoAdminSave(payload) {
     const db = loadDB();
     const entity = payload.entity;
@@ -543,6 +650,14 @@
       input.comision_pct = Number(input.comision_pct) || 0;
       input.activo = input.activo !== false;
       if (!input.color) input.color = "#C98A4B";
+      input.clave = String(input.clave || "").trim();
+      if (input.clave) {
+        if (input.clave.length < 6) throw new Error("La clave personal debe tener al menos 6 caracteres.");
+        const taken = db.barbers.some(
+          (b) => b.id !== input.id && String(b.clave || "").trim() === input.clave
+        );
+        if (taken) throw new Error("Esa clave ya está en uso por otro barbero.");
+      }
     }
 
     if (entity === "incomes" || entity === "expenses") {
@@ -749,6 +864,33 @@
       const payload = { id, estado, metodo_pago, ...extra };
       if (DEMO) return demoSetStatus(payload);
       return request("setStatus", adminPayload(payload));
+    },
+
+    /* ---------- Panel del barbero ---------- */
+    async barberLogin(clave) {
+      if (DEMO) return demoBarberLogin({ clave });
+      return request("barberLogin", { clave });
+    },
+
+    async barberData(clave) {
+      if (DEMO) return demoBarberData({ clave });
+      return request("barberData", { clave });
+    },
+
+    async barberSave(clave, entity, record) {
+      if (DEMO) return demoBarberSave({ clave, entity, record });
+      return request("barberSave", { clave, entity, record });
+    },
+
+    async barberDelete(clave, entity, id) {
+      if (DEMO) return demoBarberDelete({ clave, entity, id });
+      return request("barberDelete", { clave, entity, id });
+    },
+
+    async barberSetStatus(clave, id, estado, metodo_pago, extra = {}) {
+      const payload = { clave, id, estado, metodo_pago, ...extra };
+      if (DEMO) return demoBarberSetStatus(payload);
+      return request("barberSetStatus", payload);
     },
 
     resetDemo() {

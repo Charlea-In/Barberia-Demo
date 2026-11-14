@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mi jornada — Norte Barbería</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#121214">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=20261113">
+</head>
+<body class="admin-body">
+
+  <!-- LOGIN -->
+  <div class="login" id="barbero-login">
+    <div class="login__brand">
+      <a class="brand" href="index.html" style="color:var(--cream)">
+        <span class="brand__mark" aria-hidden="true">NB</span>
+        <span class="brand__text">
+          <span class="brand__name">NORTE</span>
+          <span class="brand__sub">BARBERÍA</span>
+        </span>
+      </a>
+      <div>
+        <div class="eyebrow" style="margin-bottom:16px">Acceso barberos</div>
+        <div class="login__quote">Tu jornada,<br>tu <em>tiempo</em>.</div>
+      </div>
+      <div class="mono" style="color:#7d776d;letter-spacing:.14em">AGENDA · RELOJ · INGRESOS</div>
+    </div>
+
+    <div class="login__panel">
+      <div class="login__card">
+        <span class="eyebrow">Panel del barbero</span>
+        <h1>Entrar a mi jornada</h1>
+        <p>Consulta solo tus citas, tus ingresos y tu reloj de corte. Tu clave personal te la da el dueño de la barbería.</p>
+        <form class="login__form" id="barbero-login-form">
+          <div class="field">
+            <label for="barbero-key">Clave personal</label>
+            <input class="input" id="barbero-key" name="clave" type="password" autocomplete="current-password" placeholder="••••••••" required>
+          </div>
+          <button class="btn-admin btn-admin--primary" type="submit" style="min-height:42px">Entrar a mi jornada</button>
+        </form>
+        <div class="login__hint" id="barbero-hint"></div>
+        <div style="margin-top:18px">
+          <a class="link-arrow" href="index.html" style="color:#6f6a60">Volver al sitio público</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div class="barbero-shell" id="barbero-shell" hidden>
+    <div class="admin-main">
+      <header class="topbar">
+        <div class="topbar__left">
+          <a class="barbero-brand" href="index.html" aria-label="Norte Barbería">
+            <span class="brand__mark" aria-hidden="true">NB</span>
+            <span class="brand__text">
+              <span class="brand__name">NORTE</span>
+              <span class="brand__sub">MI JORNADA</span>
+            </span>
+          </a>
+          <span class="barbero-who">
+            <span class="barbero-who__name" id="barbero-name">—</span>
+            <span class="barbero-who__role" id="barbero-role">—</span>
+          </span>
+        </div>
+        <div class="topbar__right">
+          <span class="barbero-live-chip" id="barbero-live-chip" hidden><i class="dot-live dot-live--busy"></i> En vivo</span>
+          <span class="barbero-sync" id="barbero-sync">—</span>
+          <button class="icon-btn" type="button" id="barbero-refresh" title="Actualizar ahora" aria-label="Actualizar ahora">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 11a8 8 0 1 0-2.3 6.7"/><path d="M20 4v7h-7"/></svg>
+          </button>
+          <button class="icon-btn" type="button" id="barbero-logout" title="Cerrar sesión" aria-label="Cerrar sesión">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="view" id="barbero-view"></main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+
+  <script src="js/config.js?v=20261113"></script>
+  <script src="js/ui.js?v=20261113"></script>
+  <script src="js/store.js?v=20261113"></script>
+  <script src="js/barbero.js?v=20261113"></script>
+</body>
+</html>

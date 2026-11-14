@@ -707,7 +707,9 @@ button.site-nav__link { border: 0; background: none; cursor: pointer; text-align
 .booking__title { font-family: var(--font-display); font-size: clamp(30px, 3.4vw, 40px); line-height: 1; text-transform: uppercase; letter-spacing: 0.02em; }
 .booking__sub { font-size: 13px; color: var(--muted); margin-top: 8px; }
 .booking__body { margin-top: 22px; flex: 1; }
-.booking__nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+.booking__nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+.booking__nav-total { display: none; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cream-dim); }
+.booking__nav-total b { display: block; font-family: var(--font-display); font-size: 20px; letter-spacing: 0.04em; color: var(--cream); }
 
 .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .option {
@@ -1180,6 +1182,7 @@ table.data .sub { font-size: 10.5px; color: var(--admin-muted); margin-top: 1px;
 .service-admin-row__name { font-size: 13px; font-weight: 600; }
 .service-admin-row__desc { font-size: 10.5px; color: var(--admin-muted); margin-top: 1px; }
 .service-admin-row__price { font-family: var(--font-display); font-size: 20px; }
+.service-admin-row__meta { display: none; }
 
 .settings-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 10px; }
 .settings-card { background: var(--card); border: 1px solid var(--admin-line); border-radius: 4px; padding: 18px; }
@@ -1273,6 +1276,44 @@ table.data .sub { font-size: 10.5px; color: var(--admin-muted); margin-top: 1px;
 
 .pill--admin-en_curso { background: #fbe9dd; color: #8a4b16; border-color: #f0d3bd; }
 
+/* ---------- Promedios y panel del barbero ---------- */
+.barber-access {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--admin-line);
+}
+.barber-access__label { font-size: 8.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--admin-muted); }
+.barber-access code {
+  font-size: 11px; padding: 3px 7px; background: var(--paper); border: 1px solid var(--admin-line); border-radius: 3px;
+}
+.promedios-note {
+  margin-top: 10px; padding: 14px 16px; background: #fbf7ef; border: 1px dashed #ded2bf; border-radius: 4px;
+  font-size: 12px; line-height: 1.65; color: var(--admin-muted);
+}
+.promedios-note strong { color: var(--admin-ink); }
+.promedios-note a { color: #8a5a12; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+.barbero-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.barbero-shell .admin-main { flex: 1; }
+.barbero-brand { display: flex; align-items: center; gap: 10px; color: var(--admin-ink); }
+.barbero-brand .brand__name { font-size: 15px; }
+.barbero-brand .brand__sub { font-size: 7px; }
+.barbero-who { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.barbero-who__name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barbero-who__role { font-size: 10px; color: var(--admin-muted); white-space: nowrap; }
+.barbero-live-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 5px 9px; border-radius: 999px; background: #fbe9dd; border: 1px solid #f0d3bd; color: #8a4b16;
+  white-space: nowrap;
+}
+.barbero-live-chip[hidden] { display: none; }
+.barbero-sync { font-size: 10px; color: var(--admin-muted); white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .barbero-who__role, .barbero-sync { display: none; }
+  .barbero-shell .topbar { gap: 8px; }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
   .services-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1287,19 +1328,25 @@ table.data .sub { font-size: 10.5px; color: var(--admin-muted); margin-top: 1px;
   .site-nav {
     position: fixed;
     top: 76px; left: 0; right: 0;
-    background: rgba(11, 11, 12, 0.98);
+    background: #0b0b0c;
     border-bottom: 1px solid var(--line);
+    box-shadow: 0 26px 44px rgba(0, 0, 0, 0.55);
     flex-direction: column;
     align-items: stretch;
-    padding: 12px 18px 20px;
-    gap: 2px;
+    padding: 10px 18px 18px;
+    gap: 0;
     transform: translateY(-8px);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s ease;
   }
   .site-nav.is-open { opacity: 1; transform: none; pointer-events: auto; }
-  .site-nav__link { padding: 13px 10px; font-size: 13px; }
+  .site-nav__link {
+    padding: 14px 6px;
+    font-size: 13.5px;
+    border-bottom: 1px solid rgba(244, 237, 226, 0.07);
+  }
+  .site-nav__link:last-child { border-bottom: 0; }
   .nav-toggle { display: grid; }
   .header-actions .btn--outline { display: none; }
 
@@ -1353,6 +1400,8 @@ table.data .sub { font-size: 10.5px; color: var(--admin-muted); margin-top: 1px;
   .barbers-admin-grid { grid-template-columns: 1fr; }
   .admin-form-grid { grid-template-columns: 1fr; }
   .service-admin-row { grid-template-columns: 28px minmax(0, 1fr) auto; }
+  .service-admin-row__meta { display: block; margin-top: 4px; font-size: 11px; color: var(--admin-muted); }
+  .service-admin-row__meta b { font-family: var(--font-display); font-size: 16px; font-weight: 400; color: var(--admin-ink); letter-spacing: 0.02em; }
   .service-admin-row__price, .service-admin-row__time, .service-admin-row__status { display: none; }
   .filters .input { width: 100%; }
   .filters .select { flex: 1; }
@@ -1375,6 +1424,279 @@ table.data .sub { font-size: 10.5px; color: var(--admin-muted); margin-top: 1px;
   .jornada-team { grid-template-columns: 1fr; }
   .stepper__label { font-size: 7.5px; letter-spacing: 0.1em; }
   .slot-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============================================================
+   RESPONSIVE MÓVIL
+   Ajustes específicos para teléfono: navegación, reserva a
+   pantalla completa, tablas en tarjetas y paneles del equipo.
+   ============================================================ */
+@media (max-width: 980px) {
+  .site-nav {
+    max-height: calc(100dvh - 76px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .site-nav__link { min-height: 44px; }
+  .sidebar {
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+  .sidebar__nav { overflow: visible; }
+  .drawer { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+@media (max-width: 720px) {
+  /* Campos a 16px para evitar el zoom automático de iOS */
+  .input, .select, .textarea,
+  .admin-body .input, .admin-body .select, .admin-body .textarea { font-size: 16px; }
+  .admin-body .input, .admin-body .select { min-height: 44px; }
+  .btn { min-height: 48px; }
+  .btn--sm { min-height: 40px; }
+
+  /* ---------- Sitio público ---------- */
+  .section { padding-block: 52px; }
+  .section-head { gap: 12px; margin-bottom: 26px; }
+  .section-head h2 { font-size: clamp(36px, 10.5vw, 54px); }
+  .section-head p { font-size: 13.5px; max-width: none; }
+  .hero__title { font-size: clamp(44px, 13.2vw, 76px); }
+  .hero__lead { font-size: 15px; margin-top: 20px; }
+  .hero__actions { margin-top: 24px; }
+  .hero__actions .btn { padding-inline: 14px; }
+  .hero__meta { gap: 16px 22px; margin-top: 30px; }
+  .hero__stat strong { font-size: 26px; }
+  .contact-panel { padding: 22px 18px; }
+  .contact-block { padding: 18px; }
+  .site-footer { padding-block: 34px 22px; }
+  .footer-grid { gap: 22px; }
+  .footer-bottom { margin-top: 26px; font-size: 10.5px; }
+
+  /* ---------- Reserva: pantalla completa ---------- */
+  #booking-modal.modal.is-open { place-items: stretch; }
+  #booking-modal .modal__dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+  #booking-modal .booking { display: flex; flex-direction: column; min-height: 100%; }
+  #booking-modal .booking__main { padding: 50px 16px 0; flex: 1 0 auto; }
+  #booking-modal .booking__title { font-size: 34px; padding-right: 32px; }
+  #booking-modal .booking__sub { font-size: 12.5px; }
+  #booking-modal .booking__body { margin-top: 18px; }
+  #booking-modal .date-strip {
+    margin-inline: -16px;
+    padding: 0 16px 8px;
+    scroll-padding-inline: 16px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  #booking-modal .date-strip::-webkit-scrollbar { display: none; }
+  #booking-modal .date-chip { scroll-snap-align: start; }
+  #booking-modal .option--barber > span:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    padding-right: 18px;
+  }
+  #booking-modal .option--barber .option__title,
+  #booking-modal .option--barber .option__sub {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #booking-modal .booking__nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    margin: 22px -16px 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(17, 17, 19, 0.96);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line);
+  }
+  #booking-modal .booking__nav .btn { flex: 0 1 auto; }
+  #booking-modal .booking__nav-total { display: block; flex: 1; }
+  #booking-modal .booking__aside { display: none; }
+  #booking-modal .stepper { margin-bottom: 20px; }
+  #booking-modal .modal__close {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    right: 10px;
+    background: var(--surface-2);
+  }
+
+  /* Mis citas: hoja inferior */
+  #lookup-modal.modal.is-open { place-items: end stretch; }
+  #lookup-modal .modal__dialog--sm {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: 10px 10px 0 0;
+    border-bottom: 0;
+  }
+  #lookup-modal .lookup-panel { padding: 22px 18px calc(26px + env(safe-area-inset-bottom)); }
+
+  /* ---------- Panel del dueño ---------- */
+  .chart { height: auto; aspect-ratio: 560 / 190; }
+  .chart svg text { font-size: 15px; }
+  .topbar { padding: 9px 14px; min-height: 56px; gap: 8px; }
+  .topbar__title { font-size: 11px; }
+  .topbar__right { gap: 6px; }
+  .mode-chip { font-size: 8px; padding: 4px 7px; letter-spacing: 0.1em; }
+  .view { padding: 16px 14px calc(44px + env(safe-area-inset-bottom)); }
+  .view-head { margin-bottom: 14px; }
+  .view-head__title { font-size: clamp(30px, 9vw, 40px); }
+  .view-head__sub { font-size: 12px; }
+  .view-head__actions { width: 100%; }
+  .view-head__actions > * { flex: 1 1 auto; }
+  .kpi-grid { gap: 8px; }
+  .kpi { padding: 12px; }
+  .kpi__label { font-size: 8px; }
+  .kpi__value { font-size: 28px; }
+  .kpi__meta { font-size: 10px; }
+  .dash-grid { gap: 8px; }
+  .card__head { padding: 11px 12px; }
+  .card__body { padding: 12px; }
+  .filters { padding: 10px 12px; gap: 6px; }
+  .filters .input { width: 100%; }
+  .filters .select { flex: 1 1 100%; min-width: 0; }
+  .filters__count { width: 100%; }
+  .agenda__item { padding: 10px 12px; gap: 8px; }
+  .agenda__side { flex-wrap: wrap; }
+  .barbers-admin-grid { gap: 8px; }
+  .barber-admin-card { padding: 14px; }
+  .settings-grid { gap: 8px; }
+  .settings-card { padding: 14px; }
+  .conn-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .promedios-note { font-size: 11.5px; padding: 12px; }
+  .jornada-team { grid-template-columns: 1fr 1fr; }
+  .timer-card { padding: 16px; }
+  .timer-display { font-size: 44px; }
+  .money-row { padding: 9px 12px; }
+
+  /* Modales del admin: hoja inferior */
+  .modal--admin.is-open { place-items: end stretch; }
+  .modal--admin .modal__dialog {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal--admin .modal__head { padding: 16px 16px 0; }
+  .modal--admin .modal__head h2 { font-size: 26px; }
+  .modal--admin .modal__body { padding: 14px 16px 18px; }
+  .modal--admin .modal__foot {
+    position: sticky;
+    bottom: 0;
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid var(--admin-line);
+  }
+  .admin-form-grid { grid-template-columns: 1fr; gap: 10px; }
+  .modal__close { top: 10px; right: 10px; }
+
+  /* ---------- Tablas del admin como tarjetas ---------- */
+  .table-wrap { overflow: visible; }
+  table.data { display: block; width: 100%; }
+  table.data thead { display: none; }
+  table.data tbody { display: block; }
+  table.data tr {
+    display: block;
+    margin: 10px;
+    padding: 12px;
+    border: 1px solid var(--admin-line);
+    border-radius: 6px;
+    background: #fff;
+  }
+  table.data tbody tr:hover td { background: transparent; }
+  table.data td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 0;
+    border: 0;
+    text-align: left !important;
+    min-height: 26px;
+    overflow-wrap: anywhere;
+  }
+  table.data td::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--admin-muted);
+  }
+  table.data td:not([data-label])::before,
+  table.data td[data-label=""]::before { display: none; }
+  table.data td[data-label=""] { display: block; padding: 0 0 6px; }
+  table.data td[data-label=""]:first-child {
+    margin-bottom: 6px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--admin-line);
+  }
+  table.data td:last-child { padding-top: 10px; }
+  table.data td .row-actions { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  table.data td .row-actions .mini-btn { flex: 0 0 auto; justify-content: center; min-height: 36px; min-width: 56px; }
+  table.data td .cell-stack { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; text-align: right; min-width: 0; }
+  table.data td .cell-stack > * { min-width: 0; }
+  table.data td[data-label=""] .cell-stack { align-items: flex-start; text-align: left; }
+  .mini-btn { height: 34px; font-size: 11px; padding: 0 10px; }
+  .table-empty { padding: 30px 12px; }
+
+  /* ---------- Panel del barbero ---------- */
+  .barbero-shell .topbar { padding: 8px 12px; gap: 6px; }
+  .barbero-brand { gap: 8px; }
+  .barbero-brand .brand__mark { width: 32px; height: 32px; font-size: 18px; border-radius: 8px; }
+  .barbero-who__name { max-width: 110px; }
+  .barbero-live-chip { font-size: 8px; padding: 4px 7px; }
+  .barbero-shell .icon-btn { width: 34px; height: 34px; }
+  .barbero-shell .view { padding-top: 14px; }
+  .barbero-shell .view-head__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .barbero-shell .view-head__actions .kpi { min-width: 0 !important; }
+  .jornada-row { grid-template-columns: 48px minmax(0, 1fr); padding: 10px 12px; gap: 8px 10px; }
+  .jornada-row__side { grid-column: 1 / -1; justify-content: flex-start; }
+  .jornada-row__side .btn-admin { flex: 1 1 auto; min-height: 38px; }
+  .timer-actions .btn-admin { flex: 1 1 auto; min-height: 40px; }
+}
+
+@media (max-width: 480px) {
+  .site-header__inner { min-height: 64px; gap: 8px; }
+  .site-header__inner .brand__mark { width: 36px; height: 36px; font-size: 20px; border-radius: 8px; }
+  .site-header__inner .brand__name { font-size: 19px; }
+  .site-header__inner .brand__sub { font-size: 7px; letter-spacing: 0.28em; }
+  .header-actions { gap: 6px; }
+  .header-actions .btn--ghost { display: none; }
+  .header-actions .btn { padding-inline: 12px; }
+  .nav-toggle { width: 40px; height: 40px; }
+  .site-nav { top: 64px; max-height: calc(100dvh - 64px); }
+  section[id] { scroll-margin-top: 76px; }
+  .hero__title { font-size: clamp(42px, 13vw, 58px); }
+  .hero .eyebrow { display: block; font-size: 9px; letter-spacing: 0.16em; line-height: 1.7; }
+  .hero .eyebrow::before { display: none; }
+  .hero__meta { justify-content: space-between; }
+  .hero-card { padding: 18px; }
+  .hero-card__hours { font-size: 34px; }
+  .login__brand { min-height: 200px; padding: 22px; gap: 18px; }
+  .login__quote { font-size: clamp(34px, 10.5vw, 48px); }
+  .login__brand .mono { display: none; }
+  .login__panel { padding: 24px 18px calc(32px + env(safe-area-inset-bottom)); align-items: start; }
+  .login__card h1 { font-size: 38px; }
+  .barbero-brand .brand__text { display: none; }
+  .barbero-who { flex: 1; }
+  .barbero-who__name { max-width: none; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 360px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+  .hero__stat strong { font-size: 24px; }
+  .jornada-team { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

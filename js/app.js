@@ -301,6 +301,12 @@
     $("#booking-body").innerHTML = isSuccess ? successHtml() : stepHtml();
     $("#booking-summary").innerHTML = summaryHtml();
 
+    const totalEl = $("#booking-total");
+    if (totalEl) {
+      const amount = isSuccess ? b.result.precio : svc ? svc.precio : 0;
+      totalEl.innerHTML = amount ? `<b>${U.money(amount)}</b>Total` : "";
+    }
+
     const nav = $("#booking-nav");
     nav.style.display = isSuccess ? "none" : "flex";
     $("#booking-back").style.visibility = b.step === 1 ? "hidden" : "visible";

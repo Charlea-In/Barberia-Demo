@@ -35,7 +35,7 @@ const SHEETS = {
 const HEADERS = {
   config: ["clave", "valor"],
   services: ["id", "nombre", "descripcion", "duracion_min", "precio", "activo", "orden"],
-  barbers: ["id", "nombre", "rol", "especialidad", "telefono", "comision_pct", "activo", "color"],
+  barbers: ["id", "nombre", "rol", "especialidad", "telefono", "comision_pct", "activo", "color", "clave"],
   clients: ["id", "nombre", "telefono", "email", "notas", "creado_en", "total_citas", "total_gastado", "ultima_visita"],
   appointments: [
     "id", "fecha", "hora", "cliente_id", "cliente_nombre", "cliente_telefono",
@@ -52,7 +52,7 @@ const HEADERS = {
 const TEXT_COLUMNS = {
   config: ["valor"],
   services: [],
-  barbers: [],
+  barbers: ["clave"],
   clients: ["creado_en", "ultima_visita"],
   appointments: ["fecha", "hora", "creado_en", "inicio_en", "fin_en"],
   incomes: ["fecha", "creado_en"],
@@ -85,9 +85,9 @@ const DEFAULTS = {
     { id: "srv-cejas", nombre: "Cejas", descripcion: "Perfilado con navaja.", duracion_min: 10, precio: 60, activo: true, orden: 8 },
   ],
   barbers: [
-    { id: "brb-diego", nombre: "Diego Salas", rol: "Fundador", especialidad: "Fades y cortes clásicos", telefono: "", comision_pct: 50, activo: true, color: "#C98A4B" },
-    { id: "brb-marco", nombre: "Marco Ríos", rol: "Barbero senior", especialidad: "Afeitado y barba", telefono: "", comision_pct: 45, activo: true, color: "#7C8C6E" },
-    { id: "brb-ivan", nombre: "Iván Cruz", rol: "Barbero", especialidad: "Texturizados y color", telefono: "", comision_pct: 40, activo: true, color: "#8B7BA8" },
+    { id: "brb-diego", nombre: "Diego Salas", rol: "Fundador", especialidad: "Fades y cortes clásicos", telefono: "", comision_pct: 50, activo: true, color: "#C98A4B", clave: "diego2026" },
+    { id: "brb-marco", nombre: "Marco Ríos", rol: "Barbero senior", especialidad: "Afeitado y barba", telefono: "", comision_pct: 45, activo: true, color: "#7C8C6E", clave: "marco2026" },
+    { id: "brb-ivan", nombre: "Iván Cruz", rol: "Barbero", especialidad: "Texturizados y color", telefono: "", comision_pct: 40, activo: true, color: "#8B7BA8", clave: "ivan2026" },
   ],
 };
 
@@ -232,6 +232,21 @@ function doPost(e) {
         requireAdmin_(payload);
         data = withLock_(() => setStatus_(payload));
         break;
+      case "barberLogin":
+        data = barberLogin_(payload);
+        break;
+      case "barberData":
+        data = barberData_(requireBarber_(payload));
+        break;
+      case "barberSave":
+        data = withLock_(() => barberSave_(payload));
+        break;
+      case "barberDelete":
+        data = withLock_(() => barberDelete_(payload));
+        break;
+      case "barberSetStatus":
+        data = withLock_(() => barberSetStatus_(payload));
+        break;
       default:
         throw new Error("Acción no válida: " + action);
     }
@@ -252,7 +267,7 @@ function bootstrap_() {
     services: getRecords_("services")
       .filter((s) => s.activo !== false)
       .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0)),
-    barbers: getRecords_("barbers").filter((b) => b.activo !== false),
+    barbers: getRecords_("barbers").filter((b) => b.activo !== false).map(publicBarber_),
     config: config,
     schedule: scheduleFrom_(config),
   };
@@ -380,6 +395,111 @@ function adminData_() {
   };
 }
 
+/* ============================================================
+   PANEL DEL BARBERO
+   Cada barbero entra con su clave personal y solo recibe sus
+   propias citas e ingresos. El detalle del negocio queda solo
+   en el panel del dueño.
+   ============================================================ */
+
+function publicBarber_(b) {
+  return {
+    id: b.id,
+    nombre: b.nombre,
+    rol: b.rol || "",
+    especialidad: b.especialidad || "",
+    activo: b.activo !== false,
+    color: b.color || "#C98A4B",
+  };
+}
+
+function selfBarber_(b) {
+  const base = publicBarber_(b);
+  base.comision_pct = Number(b.comision_pct) || 0;
+  return base;
+}
+
+function requireBarber_(payload) {
+  const clave = str_(payload.clave);
+  if (!clave) throw new Error("Escribe tu clave personal.");
+  const barber = getRecords_("barbers").filter(
+    (b) => b.activo !== false && str_(b.clave) === clave
+  )[0];
+  if (!barber) throw new Error("Clave incorrecta.");
+  return barber;
+}
+
+function barberData_(barber) {
+  const since = addDays_(today_(), -90);
+  const config = getConfig_();
+  return {
+    version: 1,
+    barber: selfBarber_(barber),
+    services: getRecords_("services")
+      .filter((s) => s.activo !== false)
+      .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0)),
+    config: {
+      nombre_negocio: config.nombre_negocio || "Norte Barbería",
+      moneda: config.moneda || "MXN",
+      hora_inicio: config.hora_inicio || "10:00",
+      hora_fin: config.hora_fin || "20:00",
+      dias_cerrados: config.dias_cerrados !== undefined ? config.dias_cerrados : "0",
+      slot_minutos: config.slot_minutos || "30",
+    },
+    appointments: getRecords_("appointments").filter(
+      (a) => a.barbero_id === barber.id && a.fecha >= since
+    ),
+    incomes: getRecords_("incomes").filter(
+      (i) => i.barbero_id === barber.id && i.fecha >= since
+    ),
+  };
+}
+
+function barberLogin_(payload) {
+  const barber = requireBarber_(payload);
+  return { barber: selfBarber_(barber), data: barberData_(barber) };
+}
+
+function barberSave_(payload) {
+  const barber = requireBarber_(payload);
+  const entity = str_(payload.entity);
+  if (entity !== "appointments" && entity !== "incomes") {
+    throw new Error("No puedes modificar esa sección.");
+  }
+  const input = Object.assign({}, payload.record || {});
+  input.barbero_id = barber.id;
+  input.barbero_nombre = barber.nombre;
+
+  if (input.id) {
+    const list = getRecords_(entity);
+    const existing = list.filter((item) => item.id === input.id)[0];
+    if (!existing || existing.barbero_id !== barber.id) {
+      throw new Error("Ese registro no es tuyo.");
+    }
+  }
+
+  return adminSave_({ entity: entity, record: input });
+}
+
+function barberDelete_(payload) {
+  const barber = requireBarber_(payload);
+  const entity = str_(payload.entity);
+  if (entity !== "appointments" && entity !== "incomes") {
+    throw new Error("No puedes modificar esa sección.");
+  }
+  const list = getRecords_(entity);
+  const item = list.filter((x) => x.id === payload.id)[0];
+  if (!item || item.barbero_id !== barber.id) throw new Error("Ese registro no es tuyo.");
+  return adminDelete_({ entity: entity, id: payload.id });
+}
+
+function barberSetStatus_(payload) {
+  const barber = requireBarber_(payload);
+  const appt = getRecords_("appointments").filter((a) => a.id === payload.id)[0];
+  if (!appt || appt.barbero_id !== barber.id) throw new Error("Esa cita no es tuya.");
+  return setStatus_(payload);
+}
+
 function adminSave_(payload) {
   const entity = String(payload.entity || "");
   const inputRaw = payload.record || {};
@@ -458,6 +578,14 @@ function adminSave_(payload) {
     input.comision_pct = Number(input.comision_pct) || 0;
     input.activo = bool_(input.activo, true);
     if (!input.color) input.color = "#C98A4B";
+    input.clave = str_(input.clave);
+    if (input.clave) {
+      if (input.clave.length < 6) throw new Error("La clave personal debe tener al menos 6 caracteres.");
+      const taken = getRecords_("barbers").some(
+        (b) => b.id !== input.id && str_(b.clave) === input.clave
+      );
+      if (taken) throw new Error("Esa clave ya está en uso por otro barbero.");
+    }
   }
 
   if (entity === "incomes" || entity === "expenses") {
@@ -928,6 +1056,7 @@ function normalize_(entity, raw) {
       comision_pct: num_(raw.comision_pct, 0),
       activo: bool_(raw.activo, true),
       color: str_(raw.color) || "#C98A4B",
+      clave: str_(raw.clave),
     };
   }
 
