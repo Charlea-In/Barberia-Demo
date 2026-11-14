@@ -219,7 +219,7 @@ Cada vez que modifiques `Code.gs`:
 
 La URL `/exec` se mantiene. Si creas una implementación nueva, cambia la URL en `js/config.js`.
 
-> Si esta actualización agrega columnas nuevas (por ejemplo el cronómetro de cortes: `inicio_en`, `fin_en` y `duracion_real_min`), ejecuta también **`migrar()`** una vez desde el editor. Agrega los encabezados que falten sin borrar los datos existentes.
+> Después de actualizar `Code.gs`, ejecuta **`migrar()`** una vez desde el editor. Actualiza los encabezados que falten sin borrar los datos existentes y elimina claves de barbero de demostración conocidas. Luego asigna claves personales a cada barbero desde el panel de administración.
 
 ---
 

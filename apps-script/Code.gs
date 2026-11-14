@@ -85,9 +85,10 @@ const DEFAULTS = {
     { id: "srv-cejas", nombre: "Cejas", descripcion: "Perfilado con navaja.", duracion_min: 10, precio: 60, activo: true, orden: 8 },
   ],
   barbers: [
-    { id: "brb-diego", nombre: "Diego Salas", rol: "Fundador", especialidad: "Fades y cortes clásicos", telefono: "", comision_pct: 50, activo: true, color: "#C98A4B", clave: "diego2026" },
-    { id: "brb-marco", nombre: "Marco Ríos", rol: "Barbero senior", especialidad: "Afeitado y barba", telefono: "", comision_pct: 45, activo: true, color: "#7C8C6E", clave: "marco2026" },
-    { id: "brb-ivan", nombre: "Iván Cruz", rol: "Barbero", especialidad: "Texturizados y color", telefono: "", comision_pct: 40, activo: true, color: "#8B7BA8", clave: "ivan2026" },
+    // En una instalación real, el dueño asigna las claves desde el admin.
+    { id: "brb-diego", nombre: "Diego Salas", rol: "Fundador", especialidad: "Fades y cortes clásicos", telefono: "", comision_pct: 50, activo: true, color: "#C98A4B", clave: "" },
+    { id: "brb-marco", nombre: "Marco Ríos", rol: "Barbero senior", especialidad: "Afeitado y barba", telefono: "", comision_pct: 45, activo: true, color: "#7C8C6E", clave: "" },
+    { id: "brb-ivan", nombre: "Iván Cruz", rol: "Barbero", especialidad: "Texturizados y color", telefono: "", comision_pct: 40, activo: true, color: "#8B7BA8", clave: "" },
   ],
 };
 
@@ -154,14 +155,22 @@ function configurarClave(clave) {
 }
 
 /**
- * Agrega columnas nuevas a las hojas existentes sin borrar datos.
- * Ejecútala después de actualizar Code.gs (por ejemplo, para el
- * cronómetro de cortes: inicio_en, fin_en y duracion_real_min).
+ * Actualiza encabezados sin borrar datos y elimina claves de demo
+ * conocidas de instalaciones anteriores. El dueño puede asignar
+ * claves personales desde el panel después de ejecutar esta función.
  */
 function migrar() {
   const ss = getSpreadsheet_();
   Object.keys(HEADERS).forEach((key) => ensureSheet_(ss, key));
-  Logger.log("✅ Hojas actualizadas con los encabezados más recientes.");
+  const demoKeys = ["diego2026", "marco2026", "ivan2026"];
+  let cleared = 0;
+  getRecords_("barbers").forEach((barber) => {
+    if (demoKeys.indexOf(str_(barber.clave)) === -1) return;
+    barber.clave = "";
+    writeRecord_("barbers", barber);
+    cleared += 1;
+  });
+  Logger.log("✅ Hojas actualizadas. Claves de demo eliminadas: " + cleared + ".");
 }
 
 /** Comprueba que la hoja y la clave estén listas. */
