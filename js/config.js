@@ -6,21 +6,21 @@
 
 window.BARBER_CONFIG = {
   brand: {
-    name: "Norte Barbería",
-    shortName: "Norte",
+    name: "Demo Barber",
+    shortName: "Demo",
     monogram: "NB",
     tagline: "Corte preciso. Actitud clásica.",
     established: "2019",
-    city: "Ciudad de México",
+    city: "El Salvador",
   },
 
   contact: {
     phone: "+52 55 1234 5678",
     whatsapp: "5215512345678", // solo dígitos, con lada de país
-    email: "hola@nortebarberia.mx",
-    address: "Av. Álvaro Obregón 145, Roma Norte, CDMX",
+    email: "hola@demobarberia.com",
+    address: "El Salvador",
     instagram: "norte.barberia",
-    mapsUrl: "https://maps.google.com/?q=Av.+Alvaro+Obregon+145+Roma+Norte+CDMX",
+    mapsUrl: "https://maps.google.com/?q=El+Salvador",
   },
 
   currency: {

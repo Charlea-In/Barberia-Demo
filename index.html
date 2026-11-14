@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Norte Barbería — Reserva tu corte en Roma Norte, CDMX</title>
-  <meta name="description" content="Barbería en Roma Norte. Cortes clásicos, fades, barba y afeitado tradicional. Reserva en línea en menos de un minuto.">
+  <title>Demo Barber — Reserva tu cita</title>
+  <meta name="description" content="Demo Barber en El Salvador. Consulta servicios y reserva tu cita en línea.">
   <meta name="theme-color" content="#0b0b0c">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,11 +17,11 @@
 
   <header class="site-header" id="site-header">
     <div class="container site-header__inner">
-      <a class="brand" href="#inicio" aria-label="Norte Barbería, inicio">
-        <span class="brand__mark" aria-hidden="true">NB</span>
+      <a class="brand" href="#inicio" aria-label="Demo Barber, inicio">
+        <span class="brand__mark" data-config="monograma" aria-hidden="true">DB</span>
         <span class="brand__text">
-          <span class="brand__name">NORTE</span>
-          <span class="brand__sub">BARBERÍA</span>
+          <span class="brand__name" data-config="brand_first">DEMO</span>
+          <span class="brand__sub" data-config="brand_second">BARBER</span>
         </span>
       </a>
 
@@ -47,7 +47,7 @@
     <section class="hero" id="inicio">
       <div class="container hero__grid">
         <div>
-          <span class="eyebrow" data-reveal>Barbería · <span data-config="ciudad">Ciudad de México</span> · desde <span data-config="anio">2019</span></span>
+          <span class="eyebrow" data-reveal>Barbería · <span data-config="ciudad">El Salvador</span> · desde <span data-config="anio">2019</span></span>
           <h1 class="hero__title" data-reveal>Corte preciso.<br><em>Actitud</em> clásica.</h1>
           <p class="hero__lead" data-reveal>
             Tijera, navaja y tiempo bien invertido. Un espacio para bajar el ritmo,
@@ -169,8 +169,8 @@
               <div>
                 <span class="contact-block__label">Dirección</span>
                 <div class="contact-block__value" style="margin-top:8px">
-                  <strong>Norte Barbería</strong>
-                  <span data-config="direccion">Av. Álvaro Obregón 145, Roma Norte, CDMX</span>
+                  <strong data-config="nombre_negocio">Demo Barber</strong>
+                  <span data-config="direccion">El Salvador</span>
                 </div>
               </div>
               <a class="link-arrow" data-config-link="maps" href="https://maps.google.com" target="_blank" rel="noopener">Ver en Maps</a>
@@ -179,7 +179,7 @@
               <span class="contact-block__label">Escríbenos</span>
               <div class="contact-block__value">
                 <strong data-config="telefono">+52 55 1234 5678</strong>
-                <span data-config="email">hola@nortebarberia.mx</span>
+                <span data-config="email">hola@demobarberia.com</span>
               </div>
               <a class="link-arrow" data-config-link="instagram" href="https://instagram.com" target="_blank" rel="noopener">@norte.barberia</a>
             </div>
@@ -193,20 +193,20 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a class="brand" href="#inicio" aria-label="Norte Barbería">
-            <span class="brand__mark" aria-hidden="true">NB</span>
+          <a class="brand" href="#inicio" aria-label="Demo Barber">
+            <span class="brand__mark" data-config="monograma" aria-hidden="true">DB</span>
             <span class="brand__text">
-              <span class="brand__name">NORTE</span>
-              <span class="brand__sub">BARBERÍA</span>
+              <span class="brand__name" data-config="brand_first">DEMO</span>
+              <span class="brand__sub" data-config="brand_second">BARBER</span>
             </span>
           </a>
           <p>Corte preciso, actitud clásica. Una barbería de barrio con estándar de casa.</p>
         </div>
         <div class="footer-col">
           <h4>Visítanos</h4>
-          <span data-config="direccion">Av. Álvaro Obregón 145, Roma Norte</span>
+          <span data-config="direccion">El Salvador</span>
           <a href="tel:+525512345678" data-config-link="phone">+52 55 1234 5678</a>
-          <a href="mailto:hola@nortebarberia.mx" data-config-link="email">hola@nortebarberia.mx</a>
+          <a href="mailto:hola@demobarberia.com" data-config-link="email">hola@demobarberia.com</a>
         </div>
         <div class="footer-col">
           <h4>Reservas</h4>
@@ -216,7 +216,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© <span id="year">2026</span> Norte Barbería. Todos los derechos reservados.</span>
+        <span>© <span id="year">2026</span> <span data-config="nombre_negocio">Demo Barber</span>. Todos los derechos reservados.</span>
         <span>Sitio en GitHub Pages · Datos en Google Sheets</span>
       </div>
     </div>
@@ -255,7 +255,7 @@
           <h3>Tu cita</h3>
           <div class="summary" id="booking-summary"></div>
           <p class="summary__note">Sin anticipo. Si necesitas cancelar, puedes hacerlo desde “Mis citas” con el teléfono con el que reservaste.</p>
-          <div class="summary__brand">NORTE · BARBERÍA</div>
+          <div class="summary__brand" data-config="nombre_negocio">Demo Barber</div>
         </aside>
       </div>
     </div>
@@ -284,7 +284,7 @@
 
   <script src="js/config.js?v=20261114"></script>
   <script src="js/ui.js?v=20261113"></script>
-  <script src="js/store.js?v=20261113"></script>
-  <script src="js/app.js?v=20261113"></script>
+  <script src="js/store.js?v=20261114"></script>
+  <script src="js/app.js?v=20261114"></script>
 </body>
 </html>

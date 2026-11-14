@@ -61,11 +61,12 @@ const TEXT_COLUMNS = {
 
 const DEFAULTS = {
   config: {
-    nombre_negocio: "Norte Barbería",
+    nombre_negocio: "Demo Barber",
+    ciudad: "El Salvador",
     telefono: "+52 55 1234 5678",
     whatsapp: "5215512345678",
-    email: "hola@nortebarberia.mx",
-    direccion: "Av. Álvaro Obregón 145, Roma Norte, CDMX",
+    email: "hola@demobarberia.com",
+    direccion: "El Salvador",
     instagram: "norte.barberia",
     moneda: "MXN",
     hora_inicio: "10:00",
@@ -162,6 +163,27 @@ function configurarClave(clave) {
 function migrar() {
   const ss = getSpreadsheet_();
   Object.keys(HEADERS).forEach((key) => ensureSheet_(ss, key));
+  const configRows = readRaw_("config");
+  const currentConfig = {};
+  configRows.forEach((row) => {
+    const key = str_(row.clave);
+    if (key) currentConfig[key] = configValue_(row.valor);
+  });
+  const configUpdates = {};
+  const legacyValues = {
+    nombre_negocio: ["Norte Barbería", "Demo Barber"],
+    email: ["hola@nortebarberia.mx", "hola@demobarberia.com"],
+    direccion: ["Av. Álvaro Obregón 145, Roma Norte, CDMX", "El Salvador"],
+    ciudad: ["Ciudad de México", "El Salvador"],
+  };
+  Object.keys(legacyValues).forEach((key) => {
+    const hasValue = Object.prototype.hasOwnProperty.call(currentConfig, key);
+    if (!hasValue || currentConfig[key] === legacyValues[key][0]) {
+      configUpdates[key] = legacyValues[key][1];
+    }
+  });
+  if (Object.keys(configUpdates).length) saveConfig_(configUpdates);
+
   const demoKeys = ["diego2026", "marco2026", "ivan2026"];
   let cleared = 0;
   getRecords_("barbers").forEach((barber) => {
@@ -170,7 +192,7 @@ function migrar() {
     writeRecord_("barbers", barber);
     cleared += 1;
   });
-  Logger.log("✅ Hojas actualizadas. Claves de demo eliminadas: " + cleared + ".");
+  Logger.log("✅ Hojas actualizadas. Claves de demo eliminadas: " + cleared + ". Configuración del negocio actualizada: " + Object.keys(configUpdates).join(", ") + ".");
 }
 
 /** Comprueba que la hoja y la clave estén listas. */
@@ -448,7 +470,8 @@ function barberData_(barber) {
       .filter((s) => s.activo !== false)
       .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0)),
     config: {
-      nombre_negocio: config.nombre_negocio || "Norte Barbería",
+      nombre_negocio: config.nombre_negocio || "Demo Barber",
+      ciudad: config.ciudad || "El Salvador",
       moneda: config.moneda || "MXN",
       hora_inicio: config.hora_inicio || "10:00",
       hora_fin: config.hora_fin || "20:00",

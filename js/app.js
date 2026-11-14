@@ -179,12 +179,20 @@
 
   /* ---------- Configuración de negocio ---------- */
   function applyConfig(config) {
+    const businessName = String(config.nombre_negocio || C.brand.name).trim();
+    const brandWords = businessName.split(/\s+/);
+    const firstName = brandWords.shift() || businessName;
+    const secondName = brandWords.join(" ") || "Barbería";
     const map = {
+      nombre_negocio: businessName,
+      brand_first: firstName,
+      brand_second: secondName,
       direccion: config.direccion || C.contact.address,
       telefono: config.telefono || C.contact.phone,
       email: config.email || C.contact.email,
-      ciudad: C.brand.city,
+      ciudad: config.ciudad || C.brand.city,
       anio: C.brand.established,
+      monograma: brandWords.length ? `${firstName[0]}${brandWords[0][0]}` : firstName.slice(0, 2),
     };
     $$("[data-config]").forEach((el) => {
       const value = map[el.dataset.config];
@@ -198,13 +206,23 @@
     const address = config.direccion || C.contact.address;
 
     $$('[data-config-link="phone"]').forEach((a) => (a.href = `tel:+${phoneDigits}`));
-    $$('[data-config-link="email"]').forEach((a) => (a.href = `mailto:${email}`));
+    $$('[data-config-link="email"]').forEach((a) => {
+      a.href = `mailto:${email}`;
+      a.textContent = email;
+    });
     $$('[data-config-link="instagram"]').forEach((a) => {
       a.href = `https://instagram.com/${instagram}`;
       if (/^@/.test(a.textContent.trim())) a.textContent = `@${instagram}`;
     });
     $$('[data-config-link="maps"]').forEach((a) => {
-      a.href = C.contact.mapsUrl || `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+      a.href = config.maps_url || `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+    });
+
+    document.title = `${businessName} — Reserva tu cita`;
+    const description = document.querySelector('meta[name="description"]');
+    if (description) description.content = `${businessName} en ${config.ciudad || C.brand.city}. Consulta servicios y reserva tu cita en línea.`;
+    $$(".brand").forEach((el) => {
+      el.setAttribute("aria-label", `${businessName}, inicio`);
     });
 
     const waMessage = encodeURIComponent(`Hola, quiero reservar una cita en ${config.nombre_negocio || C.brand.name}.`);

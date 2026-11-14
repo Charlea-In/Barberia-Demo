@@ -1118,6 +1118,7 @@
           <p>Se usan en el sitio público, la agenda y los enlaces de contacto.</p>
           <form id="settings-form" class="admin-form-grid">
             <div class="field field--full"><label for="cfg_nombre_negocio">Nombre del negocio</label><input class="input" id="cfg_nombre_negocio" name="nombre_negocio" value="${esc(val("nombre_negocio", C.brand.name))}"></div>
+            ${field("ciudad", "Ciudad o país")}
             ${field("telefono", "Teléfono")}
             ${field("whatsapp", "WhatsApp (solo dígitos)")}
             ${field("email", "Email", "email")}

@@ -189,6 +189,7 @@
 
     const config = {
       nombre_negocio: C.brand.name,
+      ciudad: C.brand.city,
       telefono: C.contact.phone,
       whatsapp: C.contact.whatsapp,
       email: C.contact.email,
