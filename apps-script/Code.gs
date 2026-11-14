@@ -20,7 +20,7 @@
  * ============================================================
  */
 
-const TZ = "America/Mexico_City";
+const TZ = "America/El_Salvador";
 
 const SHEETS = {
   config: "Config",

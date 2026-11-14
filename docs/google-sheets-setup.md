@@ -60,7 +60,7 @@ Si prefieres un proyecto independiente:
 3. Abre `appsscript.json` y reemplázalo por el contenido de [`apps-script/appsscript.json`](../apps-script/appsscript.json).
 4. Guarda.
 
-El manifiesto fija la zona horaria en `America/Mexico_City` y el tipo de implementación web. Si tu barbería está en otra zona horaria, cámbiala aquí y en `Code.gs` (constante `TZ`).
+El manifiesto y `Code.gs` usan la zona horaria `America/El_Salvador` para que las fechas y horas de la API coincidan con la barbería.
 
 ---
 
