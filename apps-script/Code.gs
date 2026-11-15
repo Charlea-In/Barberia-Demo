@@ -311,6 +311,7 @@ function availability_(payload) {
 function book_(payload) {
   const nombre = str_(payload.cliente_nombre);
   const telefono = str_(payload.cliente_telefono);
+  rateLimitPublic_("book", telefono);
   const fecha = date_(payload.fecha);
   const hora = time_(payload.hora);
   if (nombre.length < 2) throw new Error("Escribe tu nombre completo.");
@@ -373,6 +374,7 @@ function book_(payload) {
 }
 
 function lookup_(payload) {
+  rateLimitPublic_("lookup", payload.telefono);
   const phone = normalizePhone_(payload.telefono);
   if (phone.length < 10) throw new Error("Escribe el teléfono con el que reservaste.");
   const since = addDays_(today_(), -120);
@@ -385,6 +387,7 @@ function lookup_(payload) {
 }
 
 function cancel_(payload) {
+  rateLimitPublic_("cancel", payload.telefono);
   const appointments = getRecords_("appointments");
   const appt = appointments.filter((a) => a.id === payload.id)[0];
   if (!appt) throw new Error("No encontramos esa cita.");
@@ -409,7 +412,12 @@ function cancel_(payload) {
 
 function adminLogin_(payload) {
   const expected = getAdminKey_();
-  if (String(payload.key || "") !== expected) throw new Error("Clave incorrecta.");
+  checkLoginBlocked_("admin");
+  if (!secureStringEquals_(String(payload.key || ""), expected)) {
+    recordLoginFailure_("admin");
+    throw new Error("Clave incorrecta.");
+  }
+  resetLoginFailures_("admin");
   return { ok: true };
 }
 
@@ -453,10 +461,19 @@ function selfBarber_(b) {
 function requireBarber_(payload) {
   const clave = str_(payload.clave);
   if (!clave) throw new Error("Escribe tu clave personal.");
-  const barber = getRecords_("barbers").filter(
-    (b) => b.activo !== false && str_(b.clave) === clave
-  )[0];
-  if (!barber) throw new Error("Clave incorrecta.");
+  checkLoginBlocked_("barber");
+  const barbers = getRecords_("barbers");
+  let barber = null;
+  barbers.forEach((candidate) => {
+    const storedKey = str_(candidate.clave);
+    const matches = secureStringEquals_(clave, storedKey) && storedKey.length >= 10;
+    if (candidate.activo !== false && matches) barber = candidate;
+  });
+  if (!barber) {
+    recordLoginFailure_("barber");
+    throw new Error("Clave incorrecta.");
+  }
+  resetLoginFailures_("barber");
   return barber;
 }
 
@@ -612,7 +629,7 @@ function adminSave_(payload) {
     if (!input.color) input.color = "#C98A4B";
     input.clave = str_(input.clave);
     if (input.clave) {
-      if (input.clave.length < 6) throw new Error("La clave personal debe tener al menos 6 caracteres.");
+      if (input.clave.length < 10) throw new Error("La clave personal debe tener al menos 10 caracteres.");
       const taken = getRecords_("barbers").some(
         (b) => b.id !== input.id && str_(b.clave) === input.clave
       );
@@ -1185,7 +1202,53 @@ function publicAppointment_(appt) {
 
 function requireAdmin_(payload) {
   const expected = getAdminKey_();
-  if (String((payload && payload.key) || "") !== expected) throw new Error("Clave incorrecta.");
+  if (!secureStringEquals_(String((payload && payload.key) || ""), expected)) throw new Error("Clave incorrecta.");
+}
+
+function secureStringEquals_(left, right) {
+  const key = "NorteBarberia:comparacion-claves:v1";
+  const leftHash = Utilities.computeHmacSha256Signature(String(left), key);
+  const rightHash = Utilities.computeHmacSha256Signature(String(right), key);
+  let difference = leftHash.length ^ rightHash.length;
+  const length = Math.max(leftHash.length, rightHash.length);
+  for (let i = 0; i < length; i++) {
+    difference |= (leftHash[i] || 0) ^ (rightHash[i] || 0);
+  }
+  return difference === 0;
+}
+
+function checkLoginBlocked_(scope) {
+  const cache = CacheService.getScriptCache();
+  if (cache.get("login_block_" + scope)) {
+    throw new Error("Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.");
+  }
+}
+
+function recordLoginFailure_(scope) {
+  const cache = CacheService.getScriptCache();
+  const key = "login_fail_" + scope;
+  const attempts = (Number(cache.get(key)) || 0) + 1;
+  cache.put(key, String(attempts), 600);
+  if (attempts >= 5) {
+    cache.put("login_block_" + scope, "1", 900);
+    throw new Error("Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.");
+  }
+}
+
+function resetLoginFailures_(scope) {
+  const cache = CacheService.getScriptCache();
+  cache.remove("login_fail_" + scope);
+  cache.remove("login_block_" + scope);
+}
+
+function rateLimitPublic_(action, phone) {
+  const normalized = normalizePhone_(phone);
+  const identity = normalized || "global";
+  const cache = CacheService.getScriptCache();
+  const key = "rate_public_" + identity;
+  const requests = (Number(cache.get(key)) || 0) + 1;
+  if (requests > 10) throw new Error("Has realizado demasiadas solicitudes. Intenta de nuevo en un minuto.");
+  cache.put(key, String(requests), 60);
 }
 
 function getAdminKey_() {

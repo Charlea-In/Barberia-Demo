@@ -24,9 +24,7 @@ Luego abre `http://127.0.0.1:5500/`.
 ### Panel de administración
 
 - URL: `admin.html` (en local, `http://127.0.0.1:5500/admin.html`)
-- Clave demo: **`barberia2026`**
-
-La clave demo está en `js/config.js` → `admin.demoKey`. En modo Google Sheets la clave real se configura en Apps Script.
+En modo demo, las credenciales se administran desde la configuración del proyecto. No publiques claves ni credenciales reales en este repositorio. En modo Google Sheets, la clave del panel se configura en Apps Script.
 
 > En modo demo los datos se guardan en `localStorage` de ese navegador. Puedes restablecerlos desde **Ajustes → Restablecer demo**.
 
@@ -42,7 +40,7 @@ Resumen:
 2. Abre **Extensiones → Apps Script**.
 3. Pega `apps-script/Code.gs` y `apps-script/appsscript.json`.
 4. Ejecuta `setup()` y autoriza los permisos.
-5. Ejecuta `configurarClave("tu-clave-segura")`.
+5. Ejecuta `configurarClave("elige-una-clave-larga-y-unica")` con una clave propia de al menos 10 caracteres.
 6. Implementa como **Aplicación web**:
    - Ejecutar como: **yo**
    - Acceso: **cualquier persona**
@@ -109,7 +107,7 @@ Casi todo lo visual y comercial se cambia en **`js/config.js`**:
 - Moneda y configuración regional.
 - Horario de atención, días cerrados, duración de los intervalos y anticipación mínima.
 - Servicios y barberos iniciales.
-- URL de la API y clave demo.
+- URL de la API y configuración del modo demo.
 
 En modo Google Sheets, los servicios, barberos, horarios y datos de contacto se administran desde el panel y viven en la hoja. `js/config.js` solo se usa como semilla y como configuración de la interfaz.
 
@@ -189,7 +187,7 @@ Las acciones de administración incluyen `key` en el payload. Apps Script usa `L
 - La clave del panel es una protección ligera, adecuada para una barbería pequeña, pero **no es autenticación de usuarios**. No hay roles separados para dueño y barberos todavía.
 - La hoja de cálculo debe quedar privada. El Web App se ejecuta con la cuenta del dueño y solo expone las acciones de la API.
 - Cualquier persona con la URL del Web App puede consultar disponibilidad y reservar; es el comportamiento esperado del sitio público.
-- Para producción conviene cambiar la clave demo, usar una clave larga y revisar periódicamente la hoja.
+- Para producción conviene usar una clave larga y única, y revisar periódicamente la hoja.
 
 ---
 
