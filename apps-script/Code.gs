@@ -53,8 +53,8 @@ const TEXT_COLUMNS = {
   config: ["valor"],
   services: [],
   barbers: ["clave"],
-  clients: ["creado_en", "ultima_visita"],
-  appointments: ["fecha", "hora", "creado_en", "inicio_en", "fin_en"],
+  clients: ["telefono", "creado_en", "ultima_visita"],
+  appointments: ["fecha", "hora", "cliente_telefono", "creado_en", "inicio_en", "fin_en"],
   incomes: ["fecha", "creado_en"],
   expenses: ["fecha", "creado_en"],
 };
