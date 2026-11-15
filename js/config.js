@@ -40,7 +40,7 @@ window.BARBER_CONFIG = {
   api: {
     // Pega aquí la URL del Web App de Apps Script (termina en /exec).
     // Si lo dejas vacío, la página funciona en MODO DEMO con datos locales.
-    url: "https://script.google.com/macros/s/AKfycbzwLrshuciONhmG-pxponviuB6nIWhLm07eMW4G7MZrvFEKSvXfX7xyXDzIZzjQN-77/exec",
+    url: "https://script.google.com/macros/s/AKfycbygIrbVADV2acoP_a367vi8n4IOQ57XndpJ-IkHZC74xOZi0ZZWvZf21inX4iuVuRNz/exec",
   },
 
   admin: {
