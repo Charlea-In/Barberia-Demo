@@ -14,8 +14,13 @@
       const segments = url.pathname.split("/").filter(Boolean);
       const blobIndex = segments.indexOf("blob");
       if (url.hostname === "github.com" && blobIndex >= 2 && segments.length > blobIndex + 1) {
-        url.hostname = "raw.githubusercontent.com";
-        url.pathname = "/" + segments[0] + "/" + segments[1] + "/" + segments.slice(blobIndex + 1).join("/");
+        if (segments[0].toLowerCase() === "charlea-in" && segments[1].toLowerCase() === "barberia-demo") {
+          url.hostname = "charlea-in.github.io";
+          url.pathname = "/Barberia-Demo/" + segments.slice(blobIndex + 2).join("/");
+        } else {
+          url.hostname = "raw.githubusercontent.com";
+          url.pathname = "/" + segments[0] + "/" + segments[1] + "/" + segments.slice(blobIndex + 1).join("/");
+        }
         url.search = "";
       }
       if (/\/assets\/barberos\/.*\.(?:jpe?g|png)$/i.test(url.pathname)) {
