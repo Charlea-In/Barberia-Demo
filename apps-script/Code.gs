@@ -36,7 +36,7 @@ const SHEETS = {
 const HEADERS = {
   config: ["clave", "valor"],
   services: ["id", "nombre", "descripcion", "duracion_min", "precio", "activo", "orden"],
-  barbers: ["id", "nombre", "rol", "especialidad", "telefono", "comision_pct", "activo", "color", "clave"],
+  barbers: ["id", "nombre", "rol", "especialidad", "telefono", "comision_pct", "activo", "color", "clave", "photo_url"],
   clients: ["id", "nombre", "telefono", "email", "notas", "creado_en", "total_citas", "total_gastado", "ultima_visita"],
   appointments: [
     "id", "fecha", "hora", "cliente_id", "cliente_nombre", "cliente_telefono",
@@ -54,7 +54,7 @@ const HEADERS = {
 const TEXT_COLUMNS = {
   config: ["valor"],
   services: [],
-  barbers: ["clave"],
+  barbers: ["clave", "photo_url"],
   clients: ["telefono", "creado_en", "ultima_visita"],
   appointments: ["fecha", "hora", "cliente_telefono", "creado_en", "inicio_en", "fin_en"],
   incomes: ["fecha", "creado_en"],
@@ -465,6 +465,7 @@ function publicBarber_(b) {
     especialidad: b.especialidad || "",
     activo: b.activo !== false,
     color: b.color || "#C98A4B",
+    photo_url: b.photo_url || "",
   };
 }
 
@@ -688,6 +689,7 @@ function adminSave_(payload) {
 
   if (entity === "barbers") {
     if (!str_(input.nombre)) throw new Error("El barbero necesita un nombre.");
+    input.photo_url = str_(input.photo_url);
     input.comision_pct = Number(input.comision_pct) || 0;
     input.activo = bool_(input.activo, true);
     if (!input.color) input.color = "#C98A4B";
@@ -1007,7 +1009,14 @@ function ensureSheet_(ss, key) {
 
 function getSheet_(key) {
   const ss = getSpreadsheet_();
-  return ss.getSheetByName(SHEETS[key]) || ensureSheet_(ss, key);
+  const sh = ss.getSheetByName(SHEETS[key]) || ensureSheet_(ss, key);
+  const expected = HEADERS[key] || [];
+  if (expected.length && sh.getLastColumn()) {
+    const current = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map((h) => String(h).trim());
+    const missing = expected.filter((header) => current.indexOf(header) === -1);
+    if (missing.length) sh.getRange(1, sh.getLastColumn() + 1, 1, missing.length).setValues([missing]);
+  }
+  return sh;
 }
 
 function readRaw_(key) {
@@ -1168,6 +1177,7 @@ function normalize_(entity, raw) {
       rol: str_(raw.rol),
       especialidad: str_(raw.especialidad),
       telefono: str_(raw.telefono),
+      photo_url: str_(raw.photo_url),
       comision_pct: num_(raw.comision_pct, 0),
       activo: bool_(raw.activo, true),
       color: str_(raw.color) || "#C98A4B",

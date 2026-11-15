@@ -7,6 +7,12 @@
   const S = window.Store;
 
   const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const safePhotoUrl = (value) => {
+    try {
+      const url = new URL(String(value || ""), location.href);
+      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+    } catch (_) { return ""; }
+  };
 
   const state = {
     services: [...C.services],
@@ -357,7 +363,7 @@
         state.barbers
           .map(
             (barber) => `<button class="option option--barber" type="button" data-pick-barber="${U.esc(barber.id)}" aria-pressed="${b.barberId === barber.id}">
-              <span class="avatar" style="background:${U.esc(barber.color || "#c98a4b")}">${U.initials(barber.nombre)}</span>
+              <span class="avatar" style="background:${U.esc(barber.color || "#c98a4b")}">${U.initials(barber.nombre)}${safePhotoUrl(barber.photo_url) ? `<img src="${U.esc(safePhotoUrl(barber.photo_url))}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>
               <span><span class="option__title">${U.esc(barber.nombre)}</span><span class="option__sub">${U.esc(barber.especialidad || "")}</span></span>
             </button>`
           )

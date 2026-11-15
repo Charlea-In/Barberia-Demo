@@ -346,7 +346,8 @@
                       </div>
                       <div class="agenda__side">
                         ${U.statusPill(a.estado, true)}
-                        ${["pendiente", "confirmada"].includes(a.estado) ? miniBtn("complete-appointment", a.id, ICON.check, "Completar", "mini-btn--primary") : ""}
+                        ${a.estado === "pendiente" ? miniBtn("confirm-appointment", a.id, ICON.check, "Confirmar cita", "mini-btn--primary") : ""}
+                        ${["confirmada", "en_curso"].includes(a.estado) ? miniBtn("complete-appointment", a.id, ICON.check, "Completar corte y cobrar", "mini-btn--primary") : ""}
                       </div>
                     </div>`
                   )
@@ -583,9 +584,6 @@
           <h1 class="view-head__title">Promedios</h1>
           <p class="view-head__sub">Rendimiento y tiempos del equipo. El detalle operativo de cada barbero vive en su panel personal.</p>
         </div>
-        <div class="view-head__actions">
-          <a class="btn-admin" href="barbero.html" target="_blank" rel="noopener">Abrir panel de barberos</a>
-        </div>
       </div>
 
       <div class="kpi-grid">
@@ -670,7 +668,7 @@
 
       <div class="promedios-note">
         <strong>Cómo funciona el acceso de barberos:</strong> cada uno entra en
-        <a href="barbero.html" target="_blank" rel="noopener">barbero.html</a> con su clave personal.
+        <a href="barbero.html" target="_blank" rel="noopener">Mi jornada</a> con su clave personal.
         Ahí ve solo sus citas, sus ingresos y su reloj. El dueño conserva la vista completa en Citas, Ingresos y Clientes.
       </div>`;
   }
@@ -751,7 +749,8 @@
             <td data-label="Estado">${U.statusPill(a.estado, true)}</td>
             <td data-label="">
               <div class="row-actions">
-                ${["pendiente", "confirmada"].includes(a.estado) ? miniBtn("complete-appointment", a.id, ICON.check, "Completar y cobrar", "mini-btn--primary") : ""}
+                ${a.estado === "pendiente" ? miniBtn("confirm-appointment", a.id, ICON.check, "Confirmar cita", "mini-btn--primary") : ""}
+                ${["confirmada", "en_curso"].includes(a.estado) ? miniBtn("complete-appointment", a.id, ICON.check, "Completar corte y cobrar", "mini-btn--primary") : ""}
                 ${miniBtn("edit-appointment", a.id, ICON.edit, "Editar cita")}
                 ${["pendiente", "confirmada"].includes(a.estado) ? miniBtn("cancel-appointment", a.id, ICON.x, "Cancelar cita", "mini-btn--danger") : ""}
                 ${miniBtn("delete-appointment", a.id, ICON.trash, "Eliminar cita", "mini-btn--danger")}
@@ -1392,6 +1391,7 @@
         { name: "rol", label: "Rol", value: barber ? barber.rol || "" : "Barbero", placeholder: "Fundador, senior, barbero..." },
         { name: "especialidad", label: "Especialidad", full: true, value: barber ? barber.especialidad || "" : "", placeholder: "Fades, barba, color..." },
         { name: "telefono", label: "Teléfono", type: "tel", value: barber ? barber.telefono || "" : "" },
+        { name: "photo_url", label: "Foto de perfil (URL)", type: "url", full: true, value: barber ? barber.photo_url || "" : "", placeholder: "https://…" },
         { name: "clave", label: "Clave del panel de barbero", value: barber ? barber.clave || "" : "", placeholder: "Mínimo 6 caracteres", hint: "La usa en barbero.html. Déjala vacía para bloquear su acceso." },
         { name: "comision_pct", label: "Comisión (%)", type: "number", min: 0, step: 1, value: barber ? barber.comision_pct : 40 },
         { name: "color", label: "Color", type: "color", value: barber ? barber.color || "#C98A4B" : "#C98A4B" },
@@ -1447,6 +1447,9 @@
           break;
         case "complete-appointment":
           await completeAppointment(id);
+          break;
+        case "confirm-appointment":
+          await setStatusWithConfirm(id, "confirmada", "¿Confirmar esta cita?", "La cita quedará confirmada; el registro de cobro se hace al completar el corte.");
           break;
         case "cancel-appointment":
           await setStatusWithConfirm(id, "cancelada", "¿Cancelar esta cita?", "La cita quedará marcada como cancelada y liberará el horario.");
@@ -1769,6 +1772,18 @@
     });
 
     $("#logout-btn").addEventListener("click", logout);
+    $("#admin-refresh").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      if (!A.key || button.disabled) return;
+      button.disabled = true;
+      try {
+        await loadData();
+        renderView();
+        U.toast("Citas, disponibilidad y barberos actualizados.", "success");
+      } catch (error) {
+        U.toast(error.message || "No se pudieron actualizar los datos.", "error");
+      } finally { button.disabled = false; }
+    });
     $("#menu-btn").addEventListener("click", openSidebar);
     $("#sidebar-backdrop").addEventListener("click", closeSidebar);
     $("#drawer-close").addEventListener("click", closeDrawer);
