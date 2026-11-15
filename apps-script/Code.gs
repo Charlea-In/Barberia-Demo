@@ -1202,7 +1202,12 @@ function publicAppointment_(appt) {
 
 function requireAdmin_(payload) {
   const expected = getAdminKey_();
-  if (!secureStringEquals_(String((payload && payload.key) || ""), expected)) throw new Error("Clave incorrecta.");
+  checkLoginBlocked_("admin");
+  if (!secureStringEquals_(String((payload && payload.key) || ""), expected)) {
+    recordLoginFailure_("admin");
+    throw new Error("Clave incorrecta.");
+  }
+  resetLoginFailures_("admin");
 }
 
 function secureStringEquals_(left, right) {
