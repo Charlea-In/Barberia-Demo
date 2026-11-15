@@ -18,6 +18,9 @@
         url.pathname = "/" + segments[0] + "/" + segments[1] + "/" + segments.slice(blobIndex + 1).join("/");
         url.search = "";
       }
+      if (/\/assets\/barberos\/.*\.(?:jpe?g|png)$/i.test(url.pathname)) {
+        url.pathname = url.pathname.replace(/\.(?:jpe?g|png)$/i, ".webp");
+      }
       return url.href;
     } catch (_) { return ""; }
   };
