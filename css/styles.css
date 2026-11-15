@@ -1053,7 +1053,7 @@ button.site-nav__link { border: 0; background: none; cursor: pointer; text-align
 .daycal__hour button { display:block; position:absolute; right:3px; bottom:3px; width:16px; height:14px; border:0; padding:0; background:transparent; color:#8b806e; cursor:pointer; }
 .daycal__hour button::after { content:"+"; font-size:13px; }
 .daycal__hour button:disabled { display:none; }
-.daycal__track { position:relative; height:calc(var(--cal-hours) * 60px); min-width:520px; background:repeating-linear-gradient(to bottom, transparent 0, transparent 59px, var(--admin-line) 59px, var(--admin-line) 60px); }
+.daycal__track { position:relative; min-width:520px; background:repeating-linear-gradient(to bottom, transparent 0, transparent 59px, var(--admin-line) 59px, var(--admin-line) 60px); }
 .daycal__event { position:absolute; z-index:1; overflow:hidden; padding:5px 7px; border-radius:5px; border-left:3px solid #6e8a65; background:#edf3e9; color:#273626; font-size:11px; }
 .daycal__event b,.daycal__event small { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .daycal__event small { font-size:10px; opacity:.82; margin-top:2px; }

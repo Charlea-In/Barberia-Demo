@@ -17,12 +17,13 @@
       e.left = lane * (100 / lanes); e.width = 100 / lanes;
     });
     const rows = [];
-    for (let t = Math.floor(start / 60) * 60; t <= end; t += 60) rows.push(`<div class="daycal__hour"><span>${window.UI.timeFromMinutes(t)}</span><button type="button" data-cal-time="${window.UI.timeFromMinutes(t)}" aria-label="Crear bloque a las ${window.UI.timeFromMinutes(t)}" ${editable ? "" : "disabled"}></button></div>`);
+    const firstHour = Math.floor(start / 60) * 60;
+    for (let t = firstHour; t <= end; t += 60) rows.push(`<div class="daycal__hour"><span>${window.UI.timeFromMinutes(t)}</span><button type="button" data-cal-time="${window.UI.timeFromMinutes(Math.max(t, start))}" aria-label="Crear bloque a las ${window.UI.timeFromMinutes(Math.max(t, start))}" ${editable ? "" : "disabled"}></button></div>`);
     const eventHtml = events.map(e => {
-      const top = Math.max(0, (e.start - start) / span * 100), height = Math.max(2, (e.end - e.start) / span * 100);
-      return `<div class="daycal__event daycal__event--${e.kind}" style="top:${top}%;height:${height}%;left:${e.left}%;width:${e.width}%" title="${esc(e.sub)}"><b>${esc(e.title)}</b><small>${window.UI.timeFromMinutes(e.start)}–${window.UI.timeFromMinutes(e.end)} · ${esc(e.sub)}</small>${editable && e.block ? `<button type="button" data-cal-delete="${esc(e.id)}" aria-label="Eliminar bloque">×</button>` : ""}</div>`;
+      const top = Math.max(0, e.start - start), height = Math.max(28, e.end - e.start);
+      return `<div class="daycal__event daycal__event--${e.kind}" style="top:${top}px;height:${height}px;left:${e.left}%;width:${e.width}%" title="${esc(e.sub)}"><b>${esc(e.title)}</b><small>${window.UI.timeFromMinutes(e.start)}–${window.UI.timeFromMinutes(e.end)} · ${esc(e.sub)}</small>${editable && e.block ? `<button type="button" data-cal-delete="${esc(e.id)}" aria-label="Eliminar bloque">×</button>` : ""}</div>`;
     }).join("");
-    return `<div class="daycal"><div class="daycal__times">${rows.join("")}</div><div class="daycal__track" style="--cal-hours:${Math.ceil(span / 60)}">${eventHtml}</div></div>`;
+    return `<div class="daycal"><div class="daycal__times">${rows.join("")}</div><div class="daycal__track" style="height:${Math.ceil(span / 60) * 60}px">${eventHtml}</div></div>`;
   }
   window.DayCalendar = { render };
 })();
