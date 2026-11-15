@@ -10,7 +10,15 @@
   const safePhotoUrl = (value) => {
     try {
       const url = new URL(String(value || ""), location.href);
-      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+      if (!["http:", "https:"].includes(url.protocol)) return "";
+      const segments = url.pathname.split("/").filter(Boolean);
+      const blobIndex = segments.indexOf("blob");
+      if (url.hostname === "github.com" && blobIndex >= 2 && segments.length > blobIndex + 1) {
+        url.hostname = "raw.githubusercontent.com";
+        url.pathname = "/" + segments[0] + "/" + segments[1] + "/" + segments.slice(blobIndex + 1).join("/");
+        url.search = "";
+      }
+      return url.href;
     } catch (_) { return ""; }
   };
 
@@ -95,8 +103,9 @@
         (b) => `
         <article class="barber-card" style="--barber-color:${U.esc(b.color || "#c98a4b")}">
           <div class="barber-card__art">
+            ${safePhotoUrl(b.photo_url) ? `<img class="barber-card__photo" src="${U.esc(safePhotoUrl(b.photo_url))}" alt="Foto de ${U.esc(b.nombre)}" loading="lazy" onerror="this.remove();this.parentElement.querySelector('.barber-card__initials').style.visibility='visible'">` : ""}
             <span class="barber-card__tag">${U.esc(b.rol || "Barbero")}</span>
-            <span class="barber-card__initials">${U.initials(b.nombre)}</span>
+            <span class="barber-card__initials" style="visibility:${safePhotoUrl(b.photo_url) ? "hidden" : "visible"}">${U.initials(b.nombre)}</span>
           </div>
           <div class="barber-card__body">
             <h3>${U.esc(b.nombre)}</h3>
