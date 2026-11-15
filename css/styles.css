@@ -1041,6 +1041,32 @@ button.site-nav__link { border: 0; background: none; cursor: pointer; text-align
 .agenda__side { display: flex; align-items: center; gap: 6px; }
 .agenda__empty { padding: 34px 16px; text-align: center; color: var(--admin-muted); font-size: 12.5px; }
 
+/* Agenda diaria de citas y disponibilidad */
+.daycal-card { margin-top: 14px; }
+.daycal-card .card__head { gap: 14px; flex-wrap: wrap; }
+.daycal-filters { display:flex; gap:8px; }
+.daycal-filters .input, .daycal-filters .select, .daycal-card .card__head > .input { min-height:34px; height:34px; font-size:12px; }
+.daycal { display:grid; grid-template-columns:64px minmax(520px,1fr); overflow:auto; max-height:720px; border:1px solid var(--admin-line); border-radius:8px; }
+.daycal__times { background:#faf8f4; }
+.daycal__hour { height:60px; position:relative; border-bottom:1px solid var(--admin-line); font-size:10px; color:var(--admin-muted); }
+.daycal__hour span { position:absolute; top:-7px; right:10px; }
+.daycal__hour button { display:block; position:absolute; right:3px; bottom:3px; width:16px; height:14px; border:0; padding:0; background:transparent; color:#8b806e; cursor:pointer; }
+.daycal__hour button::after { content:"+"; font-size:13px; }
+.daycal__hour button:disabled { display:none; }
+.daycal__track { position:relative; height:calc(var(--cal-hours) * 60px); min-width:520px; background:repeating-linear-gradient(to bottom, transparent 0, transparent 59px, var(--admin-line) 59px, var(--admin-line) 60px); }
+.daycal__event { position:absolute; z-index:1; overflow:hidden; padding:5px 7px; border-radius:5px; border-left:3px solid #6e8a65; background:#edf3e9; color:#273626; font-size:11px; }
+.daycal__event b,.daycal__event small { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.daycal__event small { font-size:10px; opacity:.82; margin-top:2px; }
+.daycal__event--break { background:#fff0d7; border-color:#cc8b2d; color:#594018; }
+.daycal__event--lunch { background:#f8e6d6; border-color:#c67942; color:#59361e; }
+.daycal__event--blocked { background:#f5dfdc; border-color:#b75b50; color:#572c28; }
+.daycal__event--available { background:#e4f0e8; border-color:#5b936a; color:#294532; }
+.daycal__event button { float:right; border:0; background:transparent; color:inherit; cursor:pointer; font-size:16px; line-height:12px; }
+.availability-form { display:grid; grid-template-columns:repeat(4,minmax(100px,1fr)) auto; gap:10px; align-items:end; padding:14px 16px; border-top:1px solid var(--admin-line); }
+.availability-form label { display:grid; gap:5px; font-size:11px; color:var(--admin-muted); }
+.availability-form .input,.availability-form .select { width:100%; min-height:36px; height:36px; font-size:12px; }
+@media(max-width:700px) { .availability-form { grid-template-columns:repeat(2,minmax(0,1fr)); } .daycal-filters { width:100%; } .daycal-filters>* { flex:1; min-width:0; } }
+
 .rank-list { display: flex; flex-direction: column; gap: 12px; }
 .rank-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
 .rank-num { font-family: var(--font-mono); font-size: 10px; color: var(--admin-muted); }

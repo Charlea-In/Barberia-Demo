@@ -45,7 +45,7 @@
       const raw = localStorage.getItem(DB_KEY);
       if (raw) {
         const db = JSON.parse(raw);
-        if (db && db.version === 1) return db;
+        if (db && db.version === 1) { db.availabilityBlocks = db.availabilityBlocks || []; return db; }
       }
     } catch (e) {
       console.warn("No se pudo leer la base demo, se regenera.", e);
@@ -160,6 +160,7 @@
     const busyAppts = db.appointments.filter(
       (a) => a.fecha === date && !["cancelada", "no_asistio"].includes(a.estado)
     );
+    const blocks = (db.availabilityBlocks || []).filter((x) => x.fecha === date && x.estado !== "Disponible");
     const duration = Number(svc.duracion_min) || 30;
     const minStart = date === U.todayISO() ? U.nowMinutes() + sch.leadMinutes : -1;
     const slots = [];
@@ -170,7 +171,8 @@
         const busy = busyAppts
           .filter((a) => a.barbero_id === b.id)
           .map((a) => [U.minutesFromTime(a.hora), U.minutesFromTime(a.hora) + (Number(a.duracion_min) || 30)]);
-        return !busy.some(([start, end]) => t < end && t + duration > start);
+        const blocked = blocks.filter((x) => x.barbero_id === b.id).some((x) => t < U.minutesFromTime(x.hora_fin) && t + duration > U.minutesFromTime(x.hora_inicio));
+        return !blocked && !busy.some(([start, end]) => t < end && t + duration > start);
       });
       if (available.length) slots.push({ time: U.timeFromMinutes(t), barbers: available.map((b) => b.id) });
     }
@@ -356,6 +358,7 @@
       appointments: sortAppointments(appointments),
       incomes,
       expenses,
+      availabilityBlocks: [],
       seeded_at: new Date().toISOString(),
     };
 
@@ -517,6 +520,7 @@
       incomes: db.incomes.filter(
         (i) => i.barbero_id === barber.id && i.fecha >= since
       ),
+      availabilityBlocks: (db.availabilityBlocks || []).filter((x) => x.barbero_id === barber.id && x.fecha >= U.todayISO()),
     };
   }
 
@@ -536,13 +540,13 @@
     const db = loadDB();
     const barber = barberFromKey(db, payload.clave);
     const entity = String(payload.entity || "");
-    if (entity !== "appointments" && entity !== "incomes") {
+    if (entity !== "appointments" && entity !== "incomes" && entity !== "availabilityBlocks") {
       throw new Error("No puedes modificar esa sección.");
     }
     const record = { ...(payload.record || {}), barbero_id: barber.id, barbero_nombre: barber.nombre };
 
     if (record.id) {
-      const list = entity === "appointments" ? db.appointments : db.incomes;
+      const list = entity === "appointments" ? db.appointments : entity === "incomes" ? db.incomes : db.availabilityBlocks;
       const existing = list.find((item) => item.id === record.id);
       if (!existing || existing.barbero_id !== barber.id) throw new Error("Ese registro no es tuyo.");
     }
@@ -553,10 +557,10 @@
     const db = loadDB();
     const barber = barberFromKey(db, payload.clave);
     const entity = String(payload.entity || "");
-    if (entity !== "appointments" && entity !== "incomes") {
+    if (entity !== "appointments" && entity !== "incomes" && entity !== "availabilityBlocks") {
       throw new Error("No puedes modificar esa sección.");
     }
-    const list = entity === "appointments" ? db.appointments : db.incomes;
+    const list = entity === "appointments" ? db.appointments : entity === "incomes" ? db.incomes : db.availabilityBlocks;
     const item = list.find((x) => x.id === payload.id);
     if (!item || item.barbero_id !== barber.id) throw new Error("Ese registro no es tuyo.");
     return demoAdminDelete({ entity, id: payload.id });
@@ -591,6 +595,7 @@
       appointments: db.appointments,
       incomes: db.incomes,
       expenses: db.expenses,
+      availabilityBlocks: db.availabilityBlocks || (db.availabilityBlocks = []),
     };
     const list = lists[entity];
     if (!list) throw new Error("Entidad no válida: " + entity);
@@ -628,6 +633,16 @@
         creado_en: input.creado_en || new Date().toISOString(),
         duracion_real_min: Number(input.duracion_real_min) || 0,
       });
+    }
+
+    if (entity === "availabilityBlocks") {
+      input.fecha = String(input.fecha || "");
+      input.hora_inicio = String(input.hora_inicio || "");
+      input.hora_fin = String(input.hora_fin || "");
+      input.estado = String(input.estado || "No disponible");
+      if (!input.fecha || U.minutesFromTime(input.hora_inicio) >= U.minutesFromTime(input.hora_fin)) throw new Error("Indica una fecha y un rango horario válido.");
+      if (!db.barbers.some((b) => b.id === input.barbero_id)) throw new Error("Selecciona un barbero válido.");
+      if (!["Disponible", "Receso", "Almuerzo", "No disponible"].includes(input.estado)) throw new Error("Estado de disponibilidad inválido.");
     }
 
     if (entity === "clients") {
@@ -669,7 +684,7 @@
       input.metodo_pago = input.metodo_pago || "Efectivo";
     }
 
-    const prefixes = { services: "srv", barbers: "brb", clients: "cl", appointments: "apt", incomes: "inc", expenses: "exp" };
+    const prefixes = { services: "srv", barbers: "brb", clients: "cl", appointments: "apt", incomes: "inc", expenses: "exp", availabilityBlocks: "avl" };
     let record;
     if (input.id) {
       const index = list.findIndex((item) => item.id === input.id);
@@ -881,6 +896,16 @@
     async barberSave(clave, entity, record) {
       if (DEMO) return demoBarberSave({ clave, entity, record });
       return request("barberSave", { clave, entity, record });
+    },
+
+    async barberAvailabilitySave(clave, record) {
+      if (DEMO) return demoBarberSave({ clave, entity: "availabilityBlocks", record });
+      return request("barberAvailabilitySave", { clave, record });
+    },
+
+    async barberAvailabilityDelete(clave, id) {
+      if (DEMO) return demoBarberDelete({ clave, entity: "availabilityBlocks", id });
+      return request("barberAvailabilityDelete", { clave, id });
     },
 
     async barberDelete(clave, entity, id) {

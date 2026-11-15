@@ -30,6 +30,7 @@ const SHEETS = {
   appointments: "Citas",
   incomes: "Ingresos",
   expenses: "Gastos",
+  availabilityBlocks: "Disponibilidad",
 };
 
 const HEADERS = {
@@ -45,6 +46,7 @@ const HEADERS = {
   ],
   incomes: ["id", "fecha", "monto", "categoria", "descripcion", "cita_id", "metodo_pago", "barbero_id", "creado_en"],
   expenses: ["id", "fecha", "monto", "categoria", "descripcion", "metodo_pago", "creado_en"],
+  availabilityBlocks: ["id", "barbero_id", "fecha", "hora_inicio", "hora_fin", "estado", "notas", "creado_en"],
 };
 
 // Columnas que deben guardarse como texto para que Sheets no las
@@ -57,6 +59,7 @@ const TEXT_COLUMNS = {
   appointments: ["fecha", "hora", "cliente_telefono", "creado_en", "inicio_en", "fin_en"],
   incomes: ["fecha", "creado_en"],
   expenses: ["fecha", "creado_en"],
+  availabilityBlocks: ["fecha", "hora_inicio", "hora_fin", "creado_en"],
 };
 
 const DEFAULTS = {
@@ -94,7 +97,7 @@ const DEFAULTS = {
 };
 
 const STATUSES = ["pendiente", "confirmada", "en_curso", "completada", "cancelada", "no_asistio"];
-const PREFIXES = { services: "srv", barbers: "brb", clients: "cl", appointments: "apt", incomes: "inc", expenses: "exp" };
+const PREFIXES = { services: "srv", barbers: "brb", clients: "cl", appointments: "apt", incomes: "inc", expenses: "exp", availabilityBlocks: "avl" };
 
 /* ============================================================
    INSTALACIÓN
@@ -269,6 +272,12 @@ function doPost(e) {
       case "barberData":
         data = barberData_(requireBarber_(payload));
         break;
+      case "barberAvailabilitySave":
+        data = withLock_(() => barberAvailabilitySave_(payload));
+        break;
+      case "barberAvailabilityDelete":
+        data = withLock_(() => barberAvailabilityDelete_(payload));
+        break;
       case "barberSave":
         data = withLock_(() => barberSave_(payload));
         break;
@@ -431,6 +440,7 @@ function adminData_() {
     appointments: getRecords_("appointments"),
     incomes: getRecords_("incomes"),
     expenses: getRecords_("expenses"),
+    availabilityBlocks: getRecords_("availabilityBlocks"),
   };
 }
 
@@ -498,6 +508,7 @@ function barberData_(barber) {
     appointments: getRecords_("appointments").filter(
       (a) => a.barbero_id === barber.id && a.fecha >= since
     ),
+    availabilityBlocks: getRecords_("availabilityBlocks").filter((x) => x.barbero_id === barber.id && x.fecha >= today_()),
     incomes: getRecords_("incomes").filter(
       (i) => i.barbero_id === barber.id && i.fecha >= since
     ),
@@ -528,6 +539,23 @@ function barberSave_(payload) {
   }
 
   return adminSave_({ entity: entity, record: input });
+}
+
+function barberAvailabilitySave_(payload) {
+  const barber = requireBarber_(payload);
+  const record = Object.assign({}, payload.record || {}, { barbero_id: barber.id });
+  if (record.id) {
+    const existing = getRecords_("availabilityBlocks").filter((x) => x.id === str_(record.id))[0];
+    if (!existing || existing.barbero_id !== barber.id) throw new Error("Ese bloque no es tuyo.");
+  }
+  return adminSave_({ entity: "availabilityBlocks", record: record });
+}
+
+function barberAvailabilityDelete_(payload) {
+  const barber = requireBarber_(payload);
+  const item = getRecords_("availabilityBlocks").filter((x) => x.id === str_(payload.id))[0];
+  if (!item || item.barbero_id !== barber.id) throw new Error("Ese bloque no es tuyo.");
+  return adminDelete_({ entity: "availabilityBlocks", id: payload.id });
 }
 
 function barberDelete_(payload) {
@@ -603,6 +631,18 @@ function adminSave_(payload) {
       fin_en: timestamp_(input.fin_en),
       duracion_real_min: Number(input.duracion_real_min) || 0,
     });
+  }
+
+  if (entity === "availabilityBlocks") {
+    input.fecha = date_(input.fecha);
+    input.hora_inicio = time_(input.hora_inicio);
+    input.hora_fin = time_(input.hora_fin);
+    input.estado = str_(input.estado) || "No disponible";
+    if (!input.fecha || minutesFromTime_(input.hora_inicio) >= minutesFromTime_(input.hora_fin)) throw new Error("Indica una fecha y un rango horario válido.");
+    if (!getRecords_("barbers").some((b) => b.id === input.barbero_id)) throw new Error("Selecciona un barbero válido.");
+    if (["Disponible", "Receso", "Almuerzo", "No disponible"].indexOf(input.estado) === -1) throw new Error("Estado de disponibilidad inválido.");
+    input.notas = str_(input.notas);
+    input.creado_en = input.creado_en || new Date().toISOString();
   }
 
   if (entity === "clients") {
@@ -791,6 +831,7 @@ function computeAvailability_(dateValue, serviceId, barberId) {
   const busyAppts = getRecords_("appointments").filter((a) =>
     a.fecha === date && ["cancelada", "no_asistio"].indexOf(a.estado) === -1
   );
+  const blocks = getRecords_("availabilityBlocks").filter((x) => x.fecha === date && x.estado !== "Disponible");
 
   const duration = Number(svc.duracion_min) || 30;
   const minStart = date === today ? nowMinutes_() + sch.leadMinutes : -1;
@@ -799,6 +840,7 @@ function computeAvailability_(dateValue, serviceId, barberId) {
   for (let t = sch.openMin; t + duration <= sch.closeMin; t += sch.slotMinutes) {
     if (t < minStart) continue;
     const available = barbers.filter((b) => {
+      if (blocks.some((x) => x.barbero_id === b.id && t < minutesFromTime_(x.hora_fin) && t + duration > minutesFromTime_(x.hora_inicio))) return false;
       return !busyAppts.some((a) => {
         if (a.barbero_id !== b.id) return false;
         const start = minutesFromTime_(a.hora);
@@ -1170,6 +1212,14 @@ function normalize_(entity, raw) {
       descripcion: str_(raw.descripcion),
       metodo_pago: str_(raw.metodo_pago),
       creado_en: timestamp_(raw.creado_en),
+    };
+  }
+
+  if (entity === "availabilityBlocks") {
+    return {
+      id: str_(raw.id), barbero_id: str_(raw.barbero_id), fecha: date_(raw.fecha),
+      hora_inicio: time_(raw.hora_inicio), hora_fin: time_(raw.hora_fin),
+      estado: str_(raw.estado) || "No disponible", notas: str_(raw.notas), creado_en: timestamp_(raw.creado_en),
     };
   }
 

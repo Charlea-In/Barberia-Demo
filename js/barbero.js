@@ -14,6 +14,7 @@
     view: "hoy", // hoy | ingresos
     timer: null,
     refresh: null,
+    calendarDate: U.todayISO(),
   };
 
   document.addEventListener("DOMContentLoaded", init);
@@ -52,14 +53,23 @@
 
     // Delegación de eventos para el panel
     $("#barbero-view").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-action]");
+      const btn = e.target.closest("[data-action], [data-cal-time], [data-cal-delete]");
       if (!btn) return;
       const action = btn.dataset.action;
       const id = btn.dataset.id;
+      if (btn.dataset.calTime) { const time = btn.dataset.calTime; const start = $("#availability-start"); const end = $("#availability-end"); if (start) start.value = time; if (end) end.value = U.timeFromMinutes(Math.min(1439, U.minutesFromTime(time) + 60)); return; }
+      if (btn.dataset.calDelete) { removeAvailability(btn.dataset.calDelete); return; }
       if (action === "start") startJob(id);
       if (action === "finish") finishJob(id);
       if (action === "confirm") changeStatus(id, "confirmada");
       if (action === "cancel") changeStatus(id, "cancelada");
+    });
+    $("#barbero-view").addEventListener("change", (e) => { if (e.target.matches("[data-cal-date]")) { state.calendarDate = e.target.value || U.todayISO(); render(); } });
+    $("#barbero-view").addEventListener("submit", async (e) => {
+      if (e.target.id !== "availability-form") return;
+      e.preventDefault(); const form = e.target; const values = Object.fromEntries(new FormData(form).entries());
+      try { await S.barberAvailabilitySave(state.key, values); await loadData(); U.toast("Bloque de disponibilidad guardado.", "success"); }
+      catch (err) { U.toast(err.message || "No se pudo guardar el bloque.", "error"); }
     });
   }
 
@@ -220,9 +230,26 @@
           </div>
         </div>
       </div>
+      <div class="card daycal-card barber-calendar">
+        <div class="card__head"><div><div class="card__title">Calendario de mi jornada</div><div class="sub">Crea bloques de receso, almuerzo o disponibilidad</div></div><input class="input" type="date" data-cal-date value="${U.esc(state.calendarDate || today)}" aria-label="Fecha del calendario"></div>
+        <div class="card__body">${DayCalendar.render({ date: state.calendarDate || today, appointments, blocks: state.data.availabilityBlocks || [], barberId: barber.id, editable: true, config: state.data.config })}</div>
+        <form class="availability-form" id="availability-form">
+          <input type="hidden" name="fecha" value="${U.esc(state.calendarDate || today)}">
+          <label>Desde<input class="input" id="availability-start" name="hora_inicio" type="time" value="12:00" required></label>
+          <label>Hasta<input class="input" id="availability-end" name="hora_fin" type="time" value="13:00" required></label>
+          <label>Estado<select class="select" name="estado"><option>Disponible</option><option>Receso</option><option selected>Almuerzo</option><option>No disponible</option></select></label>
+          <label>Nota<input class="input" name="notas" maxlength="100" placeholder="Opcional"></label>
+          <button class="btn-admin btn-admin--primary" type="submit">Guardar bloque</button>
+        </form>
+      </div>
     `;
 
     updateTimers();
+  }
+
+  async function removeAvailability(id) {
+    try { await S.barberAvailabilityDelete(state.key, id); await loadData(); U.toast("Bloque eliminado.", "success"); }
+    catch (error) { U.toast(error.message || "No se pudo eliminar.", "error"); }
   }
 
   function renderLiveTimer(appt) {

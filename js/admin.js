@@ -74,7 +74,7 @@
   function resetFilters() {
     const today = U.todayISO();
     A.filters = {
-      citas: { from: today, to: U.addDays(today, 21), estado: "todas", barber: "todos", q: "" },
+      citas: { from: today, to: U.addDays(today, 21), estado: "todas", barber: "todos", q: "", calendarDate: today },
       clientes: { q: "" },
       ingresos: { from: U.startOfMonth(today), to: U.endOfMonth(today), categoria: "todas", q: "" },
       gastos: { from: U.startOfMonth(today), to: U.endOfMonth(today), categoria: "todas", q: "" },
@@ -129,6 +129,7 @@
       barbers: [...(data.barbers || [])].sort((a, b) => String(a.nombre).localeCompare(String(b.nombre))),
       clients: [...(data.clients || [])].sort((a, b) => String(a.nombre).localeCompare(String(b.nombre))),
       appointments: [...(data.appointments || [])].sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora)),
+      availabilityBlocks: data.availabilityBlocks || [],
       incomes: [...(data.incomes || [])].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))),
       expenses: [...(data.expenses || [])].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))),
     };
@@ -723,6 +724,12 @@
           <span class="filters__count">${list.length} cita${list.length === 1 ? "" : "s"}</span>
         </div>
         <div class="table-wrap">${appointmentsTable(list)}</div>
+      </div>
+      <div class="card daycal-card">
+        <div class="card__head"><div><div class="card__title">Calendario diario</div><div class="sub">Horario completo del negocio</div></div>
+          <div class="daycal-filters"><input class="input" type="date" data-filter="citas.calendarDate" value="${esc(f.calendarDate || U.todayISO())}" aria-label="Fecha del calendario">
+          <select class="select" data-filter="citas.barber"><option value="todos" ${f.barber === "todos" ? "selected" : ""}>Todos los barberos</option>${A.data.barbers.map(b => `<option value="${esc(b.id)}" ${f.barber === b.id ? "selected" : ""}>${esc(b.nombre)}</option>`).join("")}</select></div>
+        </div><div class="card__body">${DayCalendar.render({ date: f.calendarDate || U.todayISO(), appointments: A.data.appointments, blocks: A.data.availabilityBlocks, barbers: A.data.barbers, barberId: f.barber, config: A.data.config })}</div>
       </div>`;
   }
 
