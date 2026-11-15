@@ -400,7 +400,12 @@
     });
     if (availability.closed) throw new Error("Ese día la barbería está cerrada.");
     const slot = availability.slots.find((s) => s.time === payload.hora);
-    if (!slot) throw new Error("Ese horario acaba de ocuparse. Elige otro.");
+    if (!slot) {
+      const start = U.minutesFromTime(payload.hora), end = start + (Number(svc.duracion_min) || 30);
+      const blocked = (db.availabilityBlocks || []).some((x) => x.fecha === payload.fecha && x.estado !== "Disponible" && (!payload.barbero_id || payload.barbero_id === "any" || x.barbero_id === payload.barbero_id) && start < U.minutesFromTime(x.hora_fin) && end > U.minutesFromTime(x.hora_inicio));
+      if (blocked) throw new Error("El barbero no está disponible en ese horario. Elige otra hora.");
+      throw new Error("Ese horario acaba de ocuparse. Elige otro.");
+    }
     const barberId = payload.barbero_id && payload.barbero_id !== "any" ? payload.barbero_id : slot.barbers[0];
     if (!slot.barbers.includes(barberId)) throw new Error("Ese barbero ya no tiene espacio a esa hora.");
     const barber = db.barbers.find((b) => b.id === barberId);
@@ -633,6 +638,12 @@
         creado_en: input.creado_en || new Date().toISOString(),
         duracion_real_min: Number(input.duracion_real_min) || 0,
       });
+      const scheduleChanged = !previous || previous.fecha !== input.fecha || previous.hora !== input.hora || previous.barbero_id !== input.barbero_id;
+      if (scheduleChanged && !["cancelada", "no_asistio"].includes(input.estado)) {
+        const start = U.minutesFromTime(input.hora), end = start + input.duracion_min;
+        const blocked = (db.availabilityBlocks || []).some((x) => x.barbero_id === input.barbero_id && x.fecha === input.fecha && x.estado !== "Disponible" && start < U.minutesFromTime(x.hora_fin) && end > U.minutesFromTime(x.hora_inicio));
+        if (blocked) throw new Error("El barbero no está disponible en ese horario. Elige otra hora o revisa el bloqueo de disponibilidad.");
+      }
     }
 
     if (entity === "availabilityBlocks") {

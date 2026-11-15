@@ -334,7 +334,13 @@ function book_(payload) {
   const availability = computeAvailability_(fecha, payload.servicio_id, payload.barbero_id || "any");
   if (availability.closed) throw new Error("Ese día la barbería está cerrada.");
   const slot = availability.slots.filter((s) => s.time === hora)[0];
-  if (!slot) throw new Error("Ese horario acaba de ocuparse. Elige otro.");
+  if (!slot) {
+    const start = minutesFromTime_(hora);
+    const end = start + (Number(svc.duracion_min) || 30);
+    const blocked = getRecords_("availabilityBlocks").some((x) => x.fecha === fecha && x.estado !== "Disponible" && (!payload.barbero_id || payload.barbero_id === "any" || x.barbero_id === payload.barbero_id) && start < minutesFromTime_(x.hora_fin) && end > minutesFromTime_(x.hora_inicio));
+    if (blocked) throw new Error("El barbero no está disponible en ese horario. Elige otra hora.");
+    throw new Error("Ese horario acaba de ocuparse. Elige otro.");
+  }
 
   const barberId = payload.barbero_id && payload.barbero_id !== "any" ? payload.barbero_id : slot.barbers[0];
   if (slot.barbers.indexOf(barberId) === -1) throw new Error("Ese barbero ya no tiene espacio a esa hora.");
@@ -631,6 +637,13 @@ function adminSave_(payload) {
       fin_en: timestamp_(input.fin_en),
       duracion_real_min: Number(input.duracion_real_min) || 0,
     });
+    const scheduleChanged = !previous || previous.fecha !== input.fecha || previous.hora !== input.hora || previous.barbero_id !== input.barbero_id;
+    if (scheduleChanged && ["cancelada", "no_asistio"].indexOf(input.estado) === -1) {
+      const start = minutesFromTime_(input.hora);
+      const end = start + input.duracion_min;
+      const blocked = getRecords_("availabilityBlocks").some((x) => x.barbero_id === input.barbero_id && x.fecha === input.fecha && x.estado !== "Disponible" && start < minutesFromTime_(x.hora_fin) && end > minutesFromTime_(x.hora_inicio));
+      if (blocked) throw new Error("El barbero no está disponible en ese horario. Elige otra hora o revisa el bloqueo de disponibilidad.");
+    }
   }
 
   if (entity === "availabilityBlocks") {
