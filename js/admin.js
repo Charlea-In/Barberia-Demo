@@ -212,6 +212,34 @@
     return `<button class="mini-btn ${cls}" type="button" data-action="${action}" data-id="${esc(id)}" title="${esc(label)}" aria-label="${esc(label)}">${icon}</button>`;
   }
 
+  function barberPhotoUrl(value) {
+    try {
+      const url = new URL(String(value || ""), location.href);
+      if (!["http:", "https:"].includes(url.protocol)) return "";
+      const segments = url.pathname.split("/").filter(Boolean);
+      const blobIndex = segments.indexOf("blob");
+      if (url.hostname === "github.com" && blobIndex >= 2 && segments.length > blobIndex + 1) {
+        if (segments[0].toLowerCase() === "charlea-in" && segments[1].toLowerCase() === "barberia-demo") {
+          url.hostname = "charlea-in.github.io";
+          url.pathname = "/Barberia-Demo/" + segments.slice(blobIndex + 2).join("/");
+        } else {
+          url.hostname = "raw.githubusercontent.com";
+          url.pathname = "/" + segments[0] + "/" + segments[1] + "/" + segments.slice(blobIndex + 1).join("/");
+        }
+        url.search = "";
+      }
+      if (/\/assets\/barberos\/.*\.(?:jpe?g|png)$/i.test(url.pathname)) {
+        url.pathname = url.pathname.replace(/\.(?:jpe?g|png)$/i, ".webp");
+      }
+      return url.href;
+    } catch (_) { return ""; }
+  }
+
+  function barberAvatar(barber, size = "") {
+    const photo = barberPhotoUrl(barber.photo_url);
+    return `<span class="avatar ${size}" style="background:${esc(barber.color || "#c98a4b")}">${U.initials(barber.nombre)}${photo ? `<img src="${esc(photo)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>`;
+  }
+
   function statusOptions(selected) {
     return STATUS_OPTIONS.map(
       (o) => `<option value="${o.value}" ${o.value === selected ? "selected" : ""}>${o.label}</option>`
@@ -1018,7 +1046,7 @@
             );
             return `<div class="barber-admin-card" style="${b.activo === false ? "opacity:.6" : ""}">
               <div class="barber-admin-card__top">
-                <span class="avatar avatar--lg" style="background:${esc(b.color || "#c98a4b")}">${U.initials(b.nombre)}</span>
+                ${barberAvatar(b, "avatar--lg")}
                 <div>
                   <h3>${esc(b.nombre)}</h3>
                   <div class="sub">${esc(b.rol || "Barbero")} · ${esc(b.especialidad || "General")}</div>
