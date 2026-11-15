@@ -643,6 +643,11 @@
       if (!input.fecha || U.minutesFromTime(input.hora_inicio) >= U.minutesFromTime(input.hora_fin)) throw new Error("Indica una fecha y un rango horario válido.");
       if (!db.barbers.some((b) => b.id === input.barbero_id)) throw new Error("Selecciona un barbero válido.");
       if (!["Disponible", "Receso", "Almuerzo", "No disponible"].includes(input.estado)) throw new Error("Estado de disponibilidad inválido.");
+      if (input.estado !== "Disponible") {
+        const start = U.minutesFromTime(input.hora_inicio), end = U.minutesFromTime(input.hora_fin);
+        const conflict = db.appointments.some((a) => a.barbero_id === input.barbero_id && a.fecha === input.fecha && !["cancelada", "no_asistio"].includes(a.estado) && start < U.minutesFromTime(a.hora) + (Number(a.duracion_min) || 30) && end > U.minutesFromTime(a.hora));
+        if (conflict) throw new Error("No se puede bloquear ese horario: ya hay una cita asignada. Mueve o cancela la cita antes de crear el bloqueo.");
+      }
     }
 
     if (entity === "clients") {

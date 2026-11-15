@@ -641,6 +641,17 @@ function adminSave_(payload) {
     if (!input.fecha || minutesFromTime_(input.hora_inicio) >= minutesFromTime_(input.hora_fin)) throw new Error("Indica una fecha y un rango horario válido.");
     if (!getRecords_("barbers").some((b) => b.id === input.barbero_id)) throw new Error("Selecciona un barbero válido.");
     if (["Disponible", "Receso", "Almuerzo", "No disponible"].indexOf(input.estado) === -1) throw new Error("Estado de disponibilidad inválido.");
+    if (input.estado !== "Disponible") {
+      const start = minutesFromTime_(input.hora_inicio);
+      const end = minutesFromTime_(input.hora_fin);
+      const conflict = getRecords_("appointments").some((a) => {
+        if (a.barbero_id !== input.barbero_id || a.fecha !== input.fecha || ["cancelada", "no_asistio"].indexOf(a.estado) !== -1) return false;
+        const apptStart = minutesFromTime_(a.hora);
+        const apptEnd = apptStart + (Number(a.duracion_min) || 30);
+        return start < apptEnd && end > apptStart;
+      });
+      if (conflict) throw new Error("No se puede bloquear ese horario: ya hay una cita asignada. Mueve o cancela la cita antes de crear el bloqueo.");
+    }
     input.notas = str_(input.notas);
     input.creado_en = input.creado_en || new Date().toISOString();
   }
