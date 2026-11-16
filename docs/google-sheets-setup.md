@@ -6,7 +6,7 @@ Al terminar tendrás:
 
 - Una hoja con las pestañas `Config`, `Servicios`, `Barberos`, `Clientes`, `Citas`, `Ingresos` y `Gastos`.
 - Un Web App de Apps Script que responde a la API del sitio.
-- El sitio y el panel usando datos reales en lugar del modo demo.
+- El sitio y el panel conectados a Google Sheets en lugar de la demo funcional local.
 
 ---
 
@@ -61,6 +61,8 @@ Si prefieres un proyecto independiente:
 4. Guarda.
 
 El manifiesto y `Code.gs` usan la zona horaria `America/El_Salvador` para que las fechas y horas de la API coincidan con la barbería.
+
+La configuración regional del proyecto usa `es-SV`, dólares estadounidenses (USD) y teléfonos salvadoreños de 8 dígitos. Los precios semilla son ejemplos editables desde el panel; configura las tarifas reales del negocio antes de atender clientes.
 
 ---
 
@@ -219,7 +221,9 @@ Cada vez que modifiques `Code.gs`:
 
 La URL `/exec` se mantiene. Si creas una implementación nueva, cambia la URL en `js/config.js`.
 
-> Después de actualizar `Code.gs`, ejecuta **`migrar()`** una vez desde el editor. Actualiza los encabezados que falten sin borrar los datos existentes, asigna un código `BA-01`, `BA-02`, etc. a los clientes actuales y elimina claves de barbero de demostración conocidas. Luego crea una **Nueva versión** de la implementación web para publicar el backend actualizado.
+> Después de actualizar `Code.gs`, ejecuta **`migrar()`** una vez desde el editor. Actualiza los encabezados que falten sin borrar los datos existentes, asigna un código `BA-01`, `BA-02`, etc. a los clientes actuales y elimina claves de barbero de demostración conocidas. También actualiza valores regionales de ejemplo reconocidos. Migra precios semilla solo si la moneda anterior era MXN (o faltaba) y el precio coincide exactamente con el valor de ejemplo; conserva los demás precios. Revisa la configuración y tarifas en la hoja después de ejecutar la migración. Luego crea una **Nueva versión** de la implementación web para publicar el backend actualizado.
+
+La migración no convierte importes de citas o movimientos históricos ni reescribe teléfonos de clientes existentes. Revisa los registros antes de operar con ellos en El Salvador; los teléfonos de clientes deben tener 8 dígitos locales y los importes históricos requieren una conversión contable apropiada si estaban expresados en otra moneda.
 
 Cada cliente nuevo recibe automáticamente un código. Para consultar el historial o vincular otra reserva, el cliente ingresa ese código junto con el nombre y teléfono registrados. Al reservar por primera vez, debe guardar el código que aparece en la confirmación.
 
@@ -230,7 +234,7 @@ Cada cliente nuevo recibe automáticamente un código. Para consultar el histori
 Desde el panel:
 
 - **Ajustes → Descargar respaldo JSON** guarda una copia completa de los datos visibles.
-- **Ajustes → Restablecer demo** solo funciona en modo demo y no toca Google Sheets.
+- **Ajustes → Restablecer demo** solo funciona en la demo funcional local y no toca Google Sheets.
 
 En Google Sheets también puedes usar **Archivo → Crear una copia** antes de cambios grandes.
 
@@ -238,7 +242,7 @@ En Google Sheets también puedes usar **Archivo → Crear una copia** antes de c
 
 ## Problemas frecuentes
 
-### El sitio sigue en modo demo
+### El sitio sigue en la demo funcional
 
 - Revisa que `js/config.js` tenga la URL y que termine en `/exec`.
 - Recarga con **Ctrl + F5** para evitar caché.

@@ -59,7 +59,7 @@
     $("#year") && ($("#year").textContent = new Date().getFullYear());
 
     if (S.mode === "demo") {
-      $("#login-hint").innerHTML = `Modo demo · usa la clave <b>${U.esc(C.admin.demoKey)}</b>. Los datos se guardan solo en este navegador.`;
+      $("#login-hint").innerHTML = `Demo funcional · usa la clave <b>${U.esc(C.admin.demoKey)}</b>. Los datos se guardan solo en este navegador.`;
     } else {
       $("#login-hint").innerHTML = "Modo Google Sheets · la clave se configura en las propiedades del Apps Script.";
       const chip = $("#mode-chip");
@@ -1183,9 +1183,9 @@
         <div style="display:flex;flex-direction:column;gap:10px">
           <div class="settings-card">
             <h3>Conexión de datos</h3>
-            <p>${isDemo ? "Estás en modo demo: los datos viven en este navegador." : "La página está conectada a tu Google Sheet."}</p>
+            <p>${isDemo ? "La demo funcional guarda sus datos en este navegador." : "La página está conectada a tu Google Sheet."}</p>
             <div style="margin-top:14px">
-              <div class="conn-row"><span>Modo</span><b>${isDemo ? "Demo local" : "Google Sheets"}</b></div>
+              <div class="conn-row"><span>Modo</span><b>${isDemo ? "Demo funcional" : "Google Sheets"}</b></div>
               <div class="conn-row"><span>Web App</span><code>${isDemo ? "Sin conectar" : esc(C.api.url)}</code></div>
               <div class="conn-row"><span>Clave</span><code>${isDemo ? esc(C.admin.demoKey) : "Configurada en Apps Script"}</code></div>
             </div>
@@ -1304,7 +1304,7 @@
 
     const fields = [
       { name: "cliente_nombre", label: "Cliente", required: true, value: appt ? appt.cliente_nombre : presetClient ? presetClient.nombre : "", placeholder: "Nombre completo" },
-      { name: "cliente_telefono", label: "Teléfono", type: "tel", required: true, value: appt ? appt.cliente_telefono : presetClient ? presetClient.telefono : "", placeholder: "55 1234 5678" },
+      { name: "cliente_telefono", label: "Teléfono salvadoreño", type: "tel", required: true, value: appt ? appt.cliente_telefono : presetClient ? presetClient.telefono : "", placeholder: "0000 0000" },
       { name: "servicio_id", label: "Servicio", type: "select", required: true, options: services.map((s) => ({ value: s.id, label: `${s.nombre} · ${money(s.precio)}` })), value: appt ? appt.servicio_id : services[0].id },
       { name: "barbero_id", label: "Barbero", type: "select", required: true, options: barbers.map((b) => ({ value: b.id, label: b.nombre })), value: appt ? appt.barbero_id : defaultBarber || barbers[0].id },
       { name: "fecha", label: "Fecha", type: "date", required: true, value: appt ? appt.fecha : U.todayISO() },

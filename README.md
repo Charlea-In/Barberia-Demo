@@ -1,206 +1,90 @@
 # Norte Barbería
 
-Sitio web y panel de administración para una barbería. Funciona como sitio estático en **GitHub Pages** y usa **Google Sheets** como base de datos a través de un Web App de **Google Apps Script**.
+Sistema web de gestión y reservas para barberías salvadoreñas. La interfaz está configurada para **El Salvador**: fechas `es-SV`, zona horaria `America/El_Salvador`, precios en dólares estadounidenses (USD) y teléfonos locales de 8 dígitos con código de país `+503` para enlaces.
 
-- **Sitio público:** presentación, servicios, barberos, reserva de citas y acceso al historial con código de cliente, nombre y teléfono.
-- **Panel privado:** resumen del negocio, agenda, clientes, ingresos, gastos, equipo, catálogo de servicios y ajustes.
-- **Jornada por barbero:** reloj de corte en vivo, confirmaciones, ingresos y comisión estimada de cada barbero, con tiempo promedio real por servicio.
-- **Modo demo:** si aún no conectas Google Sheets, todo funciona con datos locales en el navegador.
+**Demo funcional:** <https://charlea-in.github.io/Barberia-Demo/>
 
-**Demo publicada:** <https://charlea-in.github.io/Barberia-Demo/>
+## Funciones
 
----
+- Sitio público con servicios, barberos, disponibilidad y reserva de citas.
+- Consulta y cancelación de citas; los clientes recurrentes pueden vincular su historial usando código `BA-01`, nombre y teléfono.
+- Panel administrativo para agenda, clientes, servicios, barberos, ingresos, gastos, disponibilidad, ajustes y respaldos.
+- Portal personal de cada barbero con agenda, confirmación de citas, contacto por WhatsApp, registro de cortes e ingresos.
+- Indicador de carga al consultar datos en Google Sheets.
+- Modo de demo funcional con almacenamiento en el navegador si no hay conexión con Google Sheets.
 
-## 1. Ver la demo en local
+La demo publicada es una instancia funcional del proyecto, no una garantía de que sus datos sean persistentes entre navegadores. Para operar el negocio, conecta una hoja de Google propia y configura sus datos reales.
 
-No necesitas instalar nada. Abre `index.html` en el navegador o levanta un servidor local:
+## Abrir y usar
+
+Puedes abrir `index.html` directamente o iniciar un servidor estático desde la carpeta del proyecto:
 
 ```bash
 python -m http.server 5500
 ```
 
-Luego abre `http://127.0.0.1:5500/`.
+Abre `http://127.0.0.1:5500/`. El panel administrativo está en `admin.html` y el portal del barbero en `barbero.html`.
 
-### Panel de administración
+Sin una API configurada, la demo funcional guarda los cambios en `localStorage` del navegador actual. Desde el panel puedes restaurar los datos de demo. Las claves de demostración están en `js/config.js`; cámbialas antes de compartir una instancia de demostración.
 
-- URL: `admin.html` (en local, `http://127.0.0.1:5500/admin.html`)
-En modo demo, las credenciales se administran desde la configuración del proyecto. No publiques claves ni credenciales reales en este repositorio. En modo Google Sheets, la clave del panel se configura en Apps Script.
+## Conectar Google Sheets
 
-> En modo demo los datos se guardan en `localStorage` de ese navegador. Puedes restablecerlos desde **Ajustes → Restablecer demo**.
+La guía detallada está en [docs/google-sheets-setup.md](docs/google-sheets-setup.md).
 
----
+1. Crea una hoja de cálculo y abre **Extensiones → Apps Script**.
+2. Copia `apps-script/Code.gs` y `apps-script/appsscript.json` al proyecto de Apps Script.
+3. Ejecuta `setup()` y autoriza los permisos.
+4. Configura una clave larga para el panel con `configurarClave("tu-clave-segura")`.
+5. Implementa como aplicación web y pega su URL `/exec` en `js/config.js`, en `api.url`.
+6. Si actualizas una instalación existente, revisa la guía y ejecuta `migrar()` antes de publicar una versión nueva del Web App.
 
-## 2. Conectar Google Sheets (modo real)
+Apps Script usa `LockService` para proteger operaciones sensibles frente a solicitudes simultáneas. La zona horaria del backend está fijada a El Salvador. Cada instalación debe tener su propia hoja, clave y datos comerciales.
 
-Sigue la guía completa: **[docs/google-sheets-setup.md](docs/google-sheets-setup.md)**.
+## Configuración regional y datos
 
-Resumen:
+Los precios y contactos de `js/config.js` y `apps-script/Code.gs` son valores de ejemplo. Las tarifas semilla están expresadas en USD y deben ajustarse a cada negocio desde el panel. No se incluyen números de WhatsApp, teléfonos, correos ni direcciones comerciales inventados.
 
-1. Crea una hoja de cálculo en Google Sheets.
-2. Abre **Extensiones → Apps Script**.
-3. Pega `apps-script/Code.gs` y `apps-script/appsscript.json`.
-4. Ejecuta `setup()` y autoriza los permisos.
-5. Ejecuta `configurarClave("elige-una-clave-larga-y-unica")` con una clave propia de al menos 10 caracteres.
-6. Implementa como **Aplicación web**:
-   - Ejecutar como: **yo**
-   - Acceso: **cualquier persona**
-7. Copia la URL que termina en `/exec` en `js/config.js`:
+Los números de clientes de ejemplo usan valores de prueba y no son números de contacto. Para clientes reales, se validan 8 dígitos locales; los formularios también reconocen el prefijo internacional `+503`.
 
-```js
-api: {
-  url: "https://script.google.com/macros/s/XXXXX/exec",
-}
-```
+En Google Sheets, la configuración del negocio, el catálogo, las citas, clientes y datos financieros viven en las pestañas creadas por `setup()`. La ejecución de `migrar()` actualiza encabezados, asigna códigos de cliente faltantes y reemplaza valores regionales de ejemplo conocidos. Solo migra precios semilla si la moneda previa era MXN (o faltaba) y cada precio coincide exactamente con el valor de ejemplo; los demás precios se conservan.
 
-Al recargar, el sitio y el panel detectan la URL y dejan de usar el modo demo.
+La migración no convierte automáticamente importes de citas o movimientos históricos ni reescribe teléfonos de clientes existentes. Antes de usar datos previos en El Salvador, revisa esos registros en Sheets: los teléfonos deben estar en formato local de 8 dígitos y cualquier importe histórico en otra moneda requiere una conversión contable apropiada.
 
-### Hojas creadas
+## Publicar en GitHub Pages
 
-| Hoja | Contenido |
-| --- | --- |
-| `Config` | Nombre del negocio, contacto, horario, moneda. |
-| `Servicios` | Catálogo, precio, duración, orden y visibilidad. |
-| `Barberos` | Equipo, especialidad, comisión, color y estado. |
-| `Clientes` | Contacto, código de cliente (`BA-01`, `BA-02`, …) e historial calculado. |
-| `Citas` | Agenda con servicio, barbero, estado y origen. |
-| `Ingresos` | Cobros de servicios y ventas de productos. |
-| `Gastos` | Renta, insumos, servicios, marketing, etc. |
+El proyecto es estático y puede servirse desde GitHub Pages:
 
-No edites los encabezados ni la columna `id`: el panel y la API los usan como llaves.
+1. Sube el repositorio a GitHub.
+2. En **Settings → Pages**, selecciona despliegue desde una rama o GitHub Actions.
+3. Si usas Actions, el workflow está en `.github/workflows/pages.yml`.
+4. Tras publicar cambios de frontend, incrementa los parámetros `?v=` de los recursos CSS/JS en los HTML para renovar la caché.
 
----
-
-## 3. Publicar en GitHub Pages
-
-### Opción A — Desde una rama (la más simple)
-
-1. Sube el proyecto a un repositorio de GitHub.
-2. Ve a **Settings → Pages**.
-3. En *Build and deployment*, elige **Deploy from a branch**.
-4. Selecciona la rama (`main`) y la carpeta `/ (root)`.
-5. Guarda y espera la URL publicada.
-
-El archivo `.nojekyll` ya está incluido para que GitHub Pages no procese el sitio con Jekyll.
-
-### Opción B — GitHub Actions
-
-El repositorio incluye `.github/workflows/pages.yml`. Si prefieres Actions:
-
-1. Ve a **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. Haz push a `main` o `master` (o ejecuta el workflow manualmente).
-3. El workflow publica solo `index.html`, `admin.html`, `css/`, `js/`, `assets/` y `.nojekyll`.
-
-### Después de publicar
-
-Actualiza la URL del Web App en `js/config.js` y vuelve a subir el cambio. También puedes usar una URL relativa para el sitio, pero la API siempre debe ser la URL absoluta de Apps Script.
-
-> GitHub Pages cachea los archivos estáticos unos minutos. Los HTML enlazan CSS y JS con `?v=20261111`; al publicar cambios en esos archivos, sube ese número de versión en `index.html` y `admin.html` para que los visitantes reciban la versión nueva de inmediato.
-
----
-
-## 4. Personalizar
-
-Casi todo lo visual y comercial se cambia en **`js/config.js`**:
-
-- Nombre, lema, ciudad y monograma.
-- Teléfono, WhatsApp, email, dirección e Instagram.
-- Moneda y configuración regional.
-- Horario de atención, días cerrados, duración de los intervalos y anticipación mínima.
-- Servicios y barberos iniciales.
-- URL de la API y configuración del modo demo.
-
-En modo Google Sheets, los servicios, barberos, horarios y datos de contacto se administran desde el panel y viven en la hoja. `js/config.js` solo se usa como semilla y como configuración de la interfaz.
-
-Para cambiar colores o tipografías, edita las variables CSS al inicio de `css/styles.css`.
-
----
-
-## 5. Estructura del proyecto
+## Estructura
 
 ```text
-.
-├─ index.html               Sitio público
-├─ admin.html               Panel de administración
-├─ css/
-│  └─ styles.css            Estilos del sitio y del panel
-├─ js/
-│  ├─ config.js             Marca, contacto, horarios y conexión
-│  ├─ ui.js                 Utilidades, modales, formularios, CSV/ICS
-│  ├─ store.js              Modo demo (localStorage) y cliente HTTP
-│  ├─ app.js                Reserva, disponibilidad y “Mis citas”
-│  └─ admin.js              Vistas, CRUD, métricas y exportaciones
-├─ assets/
-│  ├─ favicon.svg
-│  └─ logo.svg
-├─ apps-script/
-│  ├─ Code.gs               API completa sobre Google Sheets
-│  ├─ appsscript.json       Manifiesto del proyecto
-│  └─ README.md             Notas de instalación del backend
-├─ docs/
-│  └─ google-sheets-setup.md Guía paso a paso
-└─ .github/workflows/pages.yml
+├─ index.html                 Sitio público y reservas
+├─ admin.html                 Panel administrativo
+├─ barbero.html               Portal del barbero
+├─ js/config.js               Marca, región, horarios y conexión
+├─ js/ui.js                   Formato, componentes y utilidades
+├─ js/store.js                Demo funcional y cliente de Apps Script
+├─ js/app.js                  Reservas e historial de clientes
+├─ js/admin.js                Administración del negocio
+├─ js/barbero.js              Jornada y acciones del barbero
+├─ js/sheets-loading.js       Indicador de operaciones con Sheets
+├─ apps-script/Code.gs        API y persistencia en Google Sheets
+└─ docs/google-sheets-setup.md Guía de instalación y actualización
 ```
 
----
+## API
 
-## 6. Cómo funciona la API
+El frontend usa solicitudes JSON a Apps Script. Entre sus acciones se encuentran `bootstrap`, `availability`, `book`, `lookup`, `cancel`, `adminLogin`, `adminData`, `adminSave`, `adminDelete`, `setStatus` y las acciones del portal de barberos. Las operaciones administrativas se validan en Apps Script; la guía explica cómo configurar y actualizar el Web App.
 
-Todas las peticiones son `POST` con cuerpo JSON y `Content-Type: text/plain;charset=utf-8` para evitar el preflight de CORS:
+## Alcance y seguridad
 
-```json
-{ "action": "bootstrap", "payload": {} }
-```
+- Google Sheets debe permanecer privada; el Web App accede a ella con la cuenta de quien lo implementa.
+- La URL del Web App es pública para permitir reservas. No guardes secretos en `js/config.js`.
+- Usa contraseñas únicas y fuertes para el panel y claves personales para cada barbero.
+- La demo funcional almacena datos localmente en el navegador y no sustituye una base de datos compartida.
 
-Respuesta:
-
-```json
-{ "ok": true, "data": { } }
-```
-
-o
-
-```json
-{ "ok": false, "error": "Mensaje para mostrar" }
-```
-
-Acciones disponibles:
-
-| Acción | Quién la usa | Descripción |
-| --- | --- | --- |
-| `bootstrap` | Público | Servicios, barberos y configuración activos. |
-| `availability` | Público | Horarios libres para una fecha y servicio. |
-| `book` | Público | Crea la cita y, si hace falta, el cliente. |
-| `lookup` | Público | Citas recientes por teléfono. |
-| `cancel` | Público | Cancela una cita validando el teléfono. |
-| `adminLogin` | Panel | Valida la clave. |
-| `adminData` | Panel | Devuelve todas las hojas. |
-| `adminSave` | Panel | Crea o actualiza un registro. |
-| `adminDelete` | Panel | Elimina un registro. |
-| `setStatus` | Panel | Cambia el estado y registra/elimina el ingreso. |
-
-Las acciones de administración incluyen `key` en el payload. Apps Script usa `LockService` para evitar citas duplicadas o escrituras simultáneas.
-
----
-
-## 7. Seguridad y alcance de esta primera versión
-
-- La clave del panel es una protección ligera, adecuada para una barbería pequeña, pero **no es autenticación de usuarios**. No hay roles separados para dueño y barberos todavía.
-- La hoja de cálculo debe quedar privada. El Web App se ejecuta con la cuenta del dueño y solo expone las acciones de la API.
-- Cualquier persona con la URL del Web App puede consultar disponibilidad y reservar; es el comportamiento esperado del sitio público.
-- Para producción conviene usar una clave larga y única, y revisar periódicamente la hoja.
-
----
-
-## 8. Siguientes mejoras sugeridas
-
-- Paginación y búsqueda en la tabla de citas.
-- Notificaciones por WhatsApp o email al confirmar/cancelar.
-- Roles y permisos por barbero.
-- Bloqueo de horarios y vacaciones.
-- Historial de caja por día y corte de caja.
-- Recordatorios automáticos con triggers de Apps Script.
-- Gráficas comparativas mes contra mes y exportación a PDF.
-
----
-
-Hecho para **Norte Barbería**. Ajusta la marca, los precios y el equipo desde `js/config.js` o desde el panel.
+Hecho para adaptar a negocios de barbería en El Salvador. Configura marca, tarifas, equipo, contactos y horario propios antes de usarlo con clientes.

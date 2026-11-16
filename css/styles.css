@@ -6,6 +6,8 @@
    4. Utilidades    8. Panel de administración
    ============================================================ */
 
+[hidden] { display: none !important; }
+
 /* ---------- 1. Tokens ---------- */
 :root {
   --ink: #0b0b0c;

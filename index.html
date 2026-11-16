@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Demo Barber — Reserva tu cita</title>
-  <meta name="description" content="Demo Barber en El Salvador. Consulta servicios y reserva tu cita en línea.">
+  <title>Norte Barbería — Reserva tu cita</title>
+  <meta name="description" content="Norte Barbería en El Salvador. Consulta servicios y reserva tu cita en línea.">
   <meta name="theme-color" content="#0b0b0c">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20261115c">
+  <link rel="stylesheet" href="css/styles.css?v=20261115d">
 </head>
 <body>
   <a class="sr-only" href="#inicio">Saltar al contenido</a>
 
   <header class="site-header" id="site-header">
     <div class="container site-header__inner">
-      <a class="brand" href="#inicio" aria-label="Demo Barber, inicio">
+      <a class="brand" href="#inicio" aria-label="Norte Barbería, inicio">
         <span class="brand__mark" data-config="monograma" aria-hidden="true">DB</span>
         <span class="brand__text">
           <span class="brand__name" data-config="brand_first">DEMO</span>
@@ -157,29 +157,29 @@
             <p>Trabajamos con cita para que nadie espere de más. Si no encuentras hueco en línea, escríbenos por WhatsApp.</p>
             <div class="hours" id="hours-list"></div>
             <div class="contact-actions">
-              <a class="btn btn--primary" id="whatsapp-link" href="#" target="_blank" rel="noopener">
+              <a class="btn btn--primary" id="whatsapp-link" href="#" target="_blank" rel="noopener" hidden>
                 WhatsApp <span class="btn__arrow" aria-hidden="true">→</span>
               </a>
-              <a class="btn btn--outline" id="phone-link" href="tel:+525512345678">Llamar</a>
+              <a class="btn btn--outline" id="phone-link" data-config-link="phone" href="#" hidden>Llamar</a>
             </div>
           </div>
 
           <div class="contact-aside" data-reveal>
-            <div class="contact-block">
+            <div class="contact-block" data-contact-address>
               <div>
                 <span class="contact-block__label">Dirección</span>
                 <div class="contact-block__value" style="margin-top:8px">
-                  <strong data-config="nombre_negocio">Demo Barber</strong>
-                  <span data-config="direccion">El Salvador</span>
+                  <strong data-config="nombre_negocio">Norte Barbería</strong>
+                  <span data-config="direccion"></span>
                 </div>
               </div>
-              <a class="link-arrow" data-config-link="maps" href="https://maps.google.com" target="_blank" rel="noopener">Ver en Maps</a>
+              <a class="link-arrow" data-config-link="maps" href="#" target="_blank" rel="noopener" hidden>Ver en Maps</a>
             </div>
             <div class="contact-block">
               <span class="contact-block__label">Escríbenos</span>
               <div class="contact-block__value">
-                <strong data-config="telefono">+52 55 1234 5678</strong>
-                <span data-config="email">hola@demobarberia.com</span>
+                <strong data-config="telefono"></strong>
+                <span data-config="email"></span>
               </div>
               <a class="link-arrow" data-config-link="instagram" href="https://instagram.com" target="_blank" rel="noopener">@norte.barberia</a>
             </div>
@@ -193,7 +193,7 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a class="brand" href="#inicio" aria-label="Demo Barber">
+          <a class="brand" href="#inicio" aria-label="Norte Barbería">
             <span class="brand__mark" data-config="monograma" aria-hidden="true">DB</span>
             <span class="brand__text">
               <span class="brand__name" data-config="brand_first">DEMO</span>
@@ -202,11 +202,11 @@
           </a>
           <p>Corte preciso, actitud clásica. Una barbería de barrio con estándar de casa.</p>
         </div>
-        <div class="footer-col">
+        <div class="footer-col" data-contact-footer>
           <h4>Visítanos</h4>
-          <span data-config="direccion">El Salvador</span>
-          <a href="tel:+525512345678" data-config-link="phone">+52 55 1234 5678</a>
-          <a href="mailto:hola@demobarberia.com" data-config-link="email">hola@demobarberia.com</a>
+          <span data-config="direccion"></span>
+          <a href="#" data-config-link="phone" hidden></a>
+          <a href="#" data-config-link="email" hidden></a>
         </div>
         <div class="footer-col">
           <h4>Reservas</h4>
@@ -216,8 +216,8 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© <span id="year">2026</span> <span data-config="nombre_negocio">Demo Barber</span>. Todos los derechos reservados.</span>
-        <span>Sitio en GitHub Pages · Datos en Google Sheets</span>
+      <span>© <span id="year">2026</span> <span data-config="nombre_negocio">Norte Barbería</span>. Todos los derechos reservados.</span>
+      <span>Reservas en línea · Datos en Google Sheets</span>
       </div>
     </div>
   </footer>
@@ -255,7 +255,7 @@
           <h3>Tu cita</h3>
           <div class="summary" id="booking-summary"></div>
           <p class="summary__note">Sin anticipo. Consulta o cancela tus citas desde “Mis citas” con tu código de cliente, nombre y teléfono.</p>
-          <div class="summary__brand" data-config="nombre_negocio">Demo Barber</div>
+          <div class="summary__brand" data-config="nombre_negocio">Norte Barbería</div>
         </aside>
       </div>
     </div>
@@ -275,7 +275,7 @@
         <form class="lookup-form" id="lookup-form">
           <label class="field"><span class="field__label">Código de cliente</span><input class="input" id="lookup-code" name="codigo_cliente" placeholder="BA-01" autocomplete="off" required></label>
           <label class="field"><span class="field__label">Nombre completo</span><input class="input" id="lookup-name" name="nombre" autocomplete="name" required></label>
-          <label class="field"><span class="field__label">Teléfono (10 dígitos)</span><input class="input" id="lookup-phone" name="telefono" type="tel" inputmode="numeric" autocomplete="tel" placeholder="5512345678" required></label>
+          <label class="field"><span class="field__label">Teléfono salvadoreño (8 dígitos)</span><input class="input" id="lookup-phone" name="telefono" type="tel" inputmode="numeric" autocomplete="tel" placeholder="00000000" required></label>
           <button class="btn btn--primary" type="submit">Ver mis citas</button>
         </form>
         <div id="lookup-results" aria-live="polite"></div>
@@ -283,9 +283,9 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=20261115c"></script>
-  <script src="js/ui.js?v=20261113"></script>
-  <script src="js/store.js?v=20261115b"></script>
-  <script src="js/app.js?v=20261115d"></script>
+  <script src="js/config.js?v=20261115d"></script>
+  <script src="js/ui.js?v=20261115d"></script>
+  <script src="js/store.js?v=20261115d"></script>
+  <script src="js/app.js?v=20261115e"></script>
 </body>
 </html>

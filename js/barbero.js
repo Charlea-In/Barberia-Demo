@@ -22,7 +22,7 @@
   async function init() {
     wire();
     if (S.mode === "demo") {
-      $("#barbero-hint").innerHTML = `Modo demo · usa una clave como <b>diego2026</b>, <b>marco2026</b> o <b>ivan2026</b>.`;
+      $("#barbero-hint").innerHTML = `Demo funcional · usa una clave como <b>diego2026</b>, <b>marco2026</b> o <b>ivan2026</b>.`;
     } else {
       $("#barbero-hint").innerHTML = "Modo Google Sheets · usa tu clave personal asignada por el dueño.";
     }
@@ -321,7 +321,8 @@
       actions += `<button class="btn-admin btn-admin--primary" type="button" data-action="confirm" data-id="${a.id}">Confirmar</button>`;
     }
     if (isPending || isConfirmed) {
-      const phone = String(a.cliente_telefono || "").replace(/\D/g, "");
+      const localPhone = U.normalizePhone(a.cliente_telefono || "");
+      const phone = localPhone.length === 8 ? `503${localPhone}` : "";
       const message = `Hola ${a.cliente_nombre || ""}, tu cita está confirmada. Te veo a las ${a.hora}. Recuerda llegar 5 minutos antes. Si termino el corte anterior antes de tu cita, con gusto podemos iniciar antes.`;
       if (phone) {
         actions += `<a class="btn-admin" href="https://wa.me/${phone}?text=${encodeURIComponent(message)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`;

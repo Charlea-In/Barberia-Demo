@@ -64,14 +64,14 @@ const TEXT_COLUMNS = {
 
 const DEFAULTS = {
   config: {
-    nombre_negocio: "Demo Barber",
-    ciudad: "El Salvador",
-    telefono: "+52 55 1234 5678",
-    whatsapp: "5215512345678",
-    email: "hola@demobarberia.com",
-    direccion: "El Salvador",
+    nombre_negocio: "Norte Barbería",
+    ciudad: "San Salvador, El Salvador",
+    telefono: "",
+    whatsapp: "",
+    email: "",
+    direccion: "",
     instagram: "norte.barberia",
-    moneda: "MXN",
+    moneda: "USD",
     hora_inicio: "10:00",
     hora_fin: "20:00",
     slot_minutos: "30",
@@ -79,14 +79,14 @@ const DEFAULTS = {
     lead_minutos: "60",
   },
   services: [
-    { id: "srv-corte", nombre: "Corte clásico", descripcion: "Tijera y máquina, lavado y peinado final.", duracion_min: 30, precio: 180, activo: true, orden: 1 },
-    { id: "srv-corte-barba", nombre: "Corte + barba", descripcion: "Corte a medida y perfilado de barba con navaja.", duracion_min: 45, precio: 260, activo: true, orden: 2 },
-    { id: "srv-afeitado", nombre: "Afeitado tradicional", descripcion: "Navaja, toalla caliente y bálsamo calmante.", duracion_min: 30, precio: 170, activo: true, orden: 3 },
-    { id: "srv-barba", nombre: "Perfilado de barba", descripcion: "Diseño, recorte y aceite para barba.", duracion_min: 20, precio: 120, activo: true, orden: 4 },
-    { id: "srv-ritual", nombre: "Ritual completo", descripcion: "Corte, barba, mascarilla y toalla caliente.", duracion_min: 75, precio: 380, activo: true, orden: 5 },
-    { id: "srv-nino", nombre: "Corte niño", descripcion: "Corte para los más pequeños de la casa.", duracion_min: 25, precio: 140, activo: true, orden: 6 },
-    { id: "srv-color", nombre: "Camuflaje de canas", descripcion: "Tinte suave con acabado natural.", duracion_min: 40, precio: 220, activo: true, orden: 7 },
-    { id: "srv-cejas", nombre: "Cejas", descripcion: "Perfilado con navaja.", duracion_min: 10, precio: 60, activo: true, orden: 8 },
+    { id: "srv-corte", nombre: "Corte clásico", descripcion: "Tijera y máquina, lavado y peinado final.", duracion_min: 30, precio: 8, activo: true, orden: 1 },
+    { id: "srv-corte-barba", nombre: "Corte + barba", descripcion: "Corte a medida y perfilado de barba con navaja.", duracion_min: 45, precio: 12, activo: true, orden: 2 },
+    { id: "srv-afeitado", nombre: "Afeitado tradicional", descripcion: "Navaja, toalla caliente y bálsamo calmante.", duracion_min: 30, precio: 8, activo: true, orden: 3 },
+    { id: "srv-barba", nombre: "Perfilado de barba", descripcion: "Diseño, recorte y aceite para barba.", duracion_min: 20, precio: 6, activo: true, orden: 4 },
+    { id: "srv-ritual", nombre: "Ritual completo", descripcion: "Corte, barba, mascarilla y toalla caliente.", duracion_min: 75, precio: 15, activo: true, orden: 5 },
+    { id: "srv-nino", nombre: "Corte niño", descripcion: "Corte para los más pequeños de la casa.", duracion_min: 25, precio: 8, activo: true, orden: 6 },
+    { id: "srv-color", nombre: "Camuflaje de canas", descripcion: "Tinte suave con acabado natural.", duracion_min: 40, precio: 10, activo: true, orden: 7 },
+    { id: "srv-cejas", nombre: "Cejas", descripcion: "Perfilado con navaja.", duracion_min: 10, precio: 4, activo: true, orden: 8 },
   ],
   barbers: [
     // En una instalación real, el dueño asigna las claves desde el admin.
@@ -176,18 +176,23 @@ function migrar() {
   });
   const configUpdates = {};
   const legacyValues = {
-    nombre_negocio: ["Norte Barbería", "Demo Barber"],
-    email: ["hola@nortebarberia.mx", "hola@demobarberia.com"],
-    direccion: ["Av. Álvaro Obregón 145, Roma Norte, CDMX", "El Salvador"],
-    ciudad: ["Ciudad de México", "El Salvador"],
+    nombre_negocio: { old: ["Demo Barber"], value: "Norte Barbería" },
+    ciudad: { old: ["Ciudad de México", "El Salvador"], value: "San Salvador, El Salvador" },
+    telefono: { old: ["+52 55 1234 5678"], value: "" },
+    whatsapp: { old: ["5215512345678"], value: "" },
+    email: { old: ["hola@nortebarberia.mx", "hola@demobarberia.com"], value: "" },
+    direccion: { old: ["Av. Álvaro Obregón 145, Roma Norte, CDMX", "El Salvador"], value: "" },
+    moneda: { old: ["MXN"], value: "USD" },
   };
   Object.keys(legacyValues).forEach((key) => {
     const hasValue = Object.prototype.hasOwnProperty.call(currentConfig, key);
-    if (!hasValue || currentConfig[key] === legacyValues[key][0]) {
-      configUpdates[key] = legacyValues[key][1];
+    if (!hasValue || legacyValues[key].old.indexOf(String(currentConfig[key])) !== -1) {
+      configUpdates[key] = legacyValues[key].value;
     }
   });
   if (Object.keys(configUpdates).length) saveConfig_(configUpdates);
+  const previousCurrency = Object.prototype.hasOwnProperty.call(currentConfig, "moneda") ? String(currentConfig.moneda) : "";
+  const migratedServicePrices = !previousCurrency || previousCurrency === "MXN" ? migrateLegacyServicePrices_() : 0;
 
   const demoKeys = ["diego2026", "marco2026", "ivan2026"];
   let cleared = 0;
@@ -197,7 +202,26 @@ function migrar() {
     writeRecord_("barbers", barber);
     cleared += 1;
   });
-  Logger.log("✅ Hojas actualizadas. Códigos de cliente asignados: " + clientCodesAdded + ". Claves de demo eliminadas: " + cleared + ". Configuración del negocio actualizada: " + Object.keys(configUpdates).join(", ") + ".");
+  Logger.log("✅ Hojas actualizadas. Códigos de cliente asignados: " + clientCodesAdded + ". Claves de demo eliminadas: " + cleared + ". Configuración del negocio actualizada: " + Object.keys(configUpdates).join(", ") + ". Precios de ejemplo ajustados a USD: " + migratedServicePrices + ".");
+}
+
+// Migra únicamente los precios semilla anteriores conocidos; conserva tarifas personalizadas.
+function migrateLegacyServicePrices_() {
+  const prices = {
+    "srv-corte": [180, 8], "srv-corte-barba": [260, 12],
+    "srv-afeitado": [170, 8], "srv-barba": [120, 6],
+    "srv-ritual": [380, 15], "srv-nino": [140, 8],
+    "srv-color": [220, 10], "srv-cejas": [60, 4],
+  };
+  let updated = 0;
+  getRecords_("services").forEach((service) => {
+    const known = prices[service.id];
+    if (!known || Number(service.precio) !== known[0]) return;
+    service.precio = known[1];
+    writeRecord_("services", service);
+    updated += 1;
+  });
+  return updated;
 }
 
 /** Comprueba que la hoja y la clave estén listas. */
@@ -326,7 +350,7 @@ function book_(payload) {
   const fecha = date_(payload.fecha);
   const hora = time_(payload.hora);
   if (nombre.length < 2) throw new Error("Escribe tu nombre completo.");
-  if (normalizePhone_(telefono).length < 10) throw new Error("Escribe un teléfono de 10 dígitos.");
+  if (normalizePhone_(telefono).length !== 8) throw new Error("Escribe un teléfono salvadoreño de 8 dígitos.");
   if (!fecha || !hora) throw new Error("Elige fecha y hora.");
 
   const clients = getRecords_("clients");
@@ -514,9 +538,9 @@ function barberData_(barber) {
       .filter((s) => s.activo !== false)
       .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0)),
     config: {
-      nombre_negocio: config.nombre_negocio || "Demo Barber",
-      ciudad: config.ciudad || "El Salvador",
-      moneda: config.moneda || "MXN",
+      nombre_negocio: config.nombre_negocio || "Norte Barbería",
+      ciudad: config.ciudad || "San Salvador, El Salvador",
+      moneda: config.moneda || "USD",
       hora_inicio: config.hora_inicio || "10:00",
       hora_fin: config.hora_fin || "20:00",
       dias_cerrados: config.dias_cerrados !== undefined ? config.dias_cerrados : "0",
@@ -986,7 +1010,7 @@ function findClientByCredentials_(payload, clients) {
   const code = str_(payload.codigo_cliente).toUpperCase();
   const name = clientNameKey_(payload.nombre);
   const phone = normalizePhone_(payload.telefono);
-  if (!/^BA-\d{2,}$/.test(code) || name.length < 2 || phone.length < 10) {
+  if (!/^BA-\d{2,}$/.test(code) || name.length < 2 || phone.length !== 8) {
     throw new Error("Revisa tu código de cliente, nombre y teléfono.");
   }
   const client = clients.filter((item) =>
@@ -1515,7 +1539,7 @@ function pad2_(n) {
 
 function normalizePhone_(phone) {
   const digits = String(phone || "").replace(/\D/g, "");
-  return digits.length > 10 ? digits.slice(-10) : digits;
+  return digits.length === 11 && digits.indexOf("503") === 0 ? digits.slice(3) : digits;
 }
 
 function shortCode_(id) {

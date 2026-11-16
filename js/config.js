@@ -6,26 +6,26 @@
 
 window.BARBER_CONFIG = {
   brand: {
-    name: "Demo Barber",
-    shortName: "Demo",
+    name: "Norte Barbería",
+    shortName: "Norte",
     monogram: "NB",
     tagline: "Corte preciso. Actitud clásica.",
     established: "2019",
-    city: "El Salvador",
+    city: "San Salvador, El Salvador",
   },
 
   contact: {
-    phone: "+52 55 1234 5678",
-    whatsapp: "5215512345678", // solo dígitos, con lada de país
-    email: "hola@demobarberia.com",
-    address: "El Salvador",
+    phone: "",
+    whatsapp: "", // Número de WhatsApp del negocio en formato internacional, sin + ni espacios.
+    email: "",
+    address: "",
     instagram: "norte.barberia",
-    mapsUrl: "https://maps.google.com/?q=El+Salvador",
+    mapsUrl: "https://maps.google.com/?q=San+Salvador,+El+Salvador",
   },
 
   currency: {
-    code: "MXN",
-    locale: "es-MX",
+    code: "USD",
+    locale: "es-SV",
   },
 
   schedule: {
@@ -39,25 +39,25 @@ window.BARBER_CONFIG = {
 
   api: {
     // Pega aquí la URL del Web App de Apps Script (termina en /exec).
-    // Si lo dejas vacío, la página funciona en MODO DEMO con datos locales.
-    url: "https://script.google.com/macros/s/AKfycbweLuEPGTyZJic6G22hM96r3iZaVrUbtSsKPtSzi61o5QjzlmRfpPxPc4JiNi7ScMT4/exec",
+    // Si lo dejas vacío, la página funciona como demo funcional con datos locales.
+    url: "https://script.google.com/macros/s/AKfycbySLhn_8tpbnsVpQrqyZE2sYmvbLbEWOUMRqOkfrc2nGsI46cnfi4HR2bjDnVz9mVc3/exec",
   },
 
   admin: {
-    // Clave del panel en modo demo. En modo Sheets manda la clave del Apps Script.
+    // Clave del panel en demo funcional. Con Sheets se usa la clave del Apps Script.
     demoKey: "barberia2026",
   },
 
   /* Datos iniciales. En modo Sheets se copian a la hoja la primera vez. */
   services: [
-    { id: "srv-corte", nombre: "Corte clásico", descripcion: "Tijera y máquina, lavado y peinado final.", duracion_min: 30, precio: 180, activo: true, orden: 1 },
-    { id: "srv-corte-barba", nombre: "Corte + barba", descripcion: "Corte a medida y perfilado de barba con navaja.", duracion_min: 45, precio: 260, activo: true, orden: 2 },
-    { id: "srv-afeitado", nombre: "Afeitado tradicional", descripcion: "Navaja, toalla caliente y bálsamo calmante.", duracion_min: 30, precio: 170, activo: true, orden: 3 },
-    { id: "srv-barba", nombre: "Perfilado de barba", descripcion: "Diseño, recorte y aceite para barba.", duracion_min: 20, precio: 120, activo: true, orden: 4 },
-    { id: "srv-ritual", nombre: "Ritual completo", descripcion: "Corte, barba, mascarilla y toalla caliente.", duracion_min: 75, precio: 380, activo: true, orden: 5 },
-    { id: "srv-nino", nombre: "Corte niño", descripcion: "Corte para los más pequeños de la casa.", duracion_min: 25, precio: 140, activo: true, orden: 6 },
-    { id: "srv-color", nombre: "Camuflaje de canas", descripcion: "Tinte suave con acabado natural.", duracion_min: 40, precio: 220, activo: true, orden: 7 },
-    { id: "srv-cejas", nombre: "Cejas", descripcion: "Perfilado con navaja.", duracion_min: 10, precio: 60, activo: true, orden: 8 },
+    { id: "srv-corte", nombre: "Corte clásico", descripcion: "Tijera y máquina, lavado y peinado final.", duracion_min: 30, precio: 8, activo: true, orden: 1 },
+    { id: "srv-corte-barba", nombre: "Corte + barba", descripcion: "Corte a medida y perfilado de barba con navaja.", duracion_min: 45, precio: 12, activo: true, orden: 2 },
+    { id: "srv-afeitado", nombre: "Afeitado tradicional", descripcion: "Navaja, toalla caliente y bálsamo calmante.", duracion_min: 30, precio: 8, activo: true, orden: 3 },
+    { id: "srv-barba", nombre: "Perfilado de barba", descripcion: "Diseño, recorte y aceite para barba.", duracion_min: 20, precio: 6, activo: true, orden: 4 },
+    { id: "srv-ritual", nombre: "Ritual completo", descripcion: "Corte, barba, mascarilla y toalla caliente.", duracion_min: 75, precio: 15, activo: true, orden: 5 },
+    { id: "srv-nino", nombre: "Corte niño", descripcion: "Corte para los más pequeños de la casa.", duracion_min: 25, precio: 8, activo: true, orden: 6 },
+    { id: "srv-color", nombre: "Camuflaje de canas", descripcion: "Tinte suave con acabado natural.", duracion_min: 40, precio: 10, activo: true, orden: 7 },
+    { id: "srv-cejas", nombre: "Cejas", descripcion: "Perfilado con navaja.", duracion_min: 10, precio: 4, activo: true, orden: 8 },
   ],
 
   barbers: [

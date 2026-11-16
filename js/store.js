@@ -1,6 +1,6 @@
 /* ============================================================
    STORE — capa de datos
-   Modo demo: localStorage (funciona sin configurar nada)
+   Demo funcional: localStorage (funciona sin configurar nada)
    Modo Sheets: POST al Web App de Google Apps Script
    La interfaz pública y el panel usan exactamente la misma API.
    ============================================================ */
@@ -93,7 +93,7 @@
     const code = String(payload.codigo_cliente || "").trim().toUpperCase();
     const name = clientNameKey(payload.nombre);
     const phone = U.normalizePhone(payload.telefono);
-    if (!/^BA-\d{2,}$/.test(code) || name.length < 2 || phone.length < 10) {
+    if (!/^BA-\d{2,}$/.test(code) || name.length < 2 || phone.length !== 8) {
       throw new Error("Revisa tu código de cliente, nombre y teléfono.");
     }
     const client = (db.clients || []).find((item) =>
@@ -254,18 +254,18 @@
     const barbers = C.barbers.map((b) => ({ ...b }));
 
     const clientSeeds = [
-      ["Aarón Villalobos", "5512348890", "aaron.v@correo.mx"],
-      ["Bruno Castañeda", "5523459911", "bruno.c@correo.mx"],
-      ["Carlos Mendoza", "5534561122", "carlos.m@correo.mx"],
-      ["Damián Ortega", "5545672233", "damian.o@correo.mx"],
-      ["Emiliano Rivas", "5556783344", "emiliano.r@correo.mx"],
-      ["Fernando Lozano", "5567894455", "fer.lozano@correo.mx"],
-      ["Gael Domínguez", "5578905566", "gael.d@correo.mx"],
-      ["Hugo Barrera", "5589016677", "hugo.b@correo.mx"],
-      ["Iker Salgado", "5590127788", "iker.s@correo.mx"],
-      ["Joaquín Paredes", "5511223344", "joaquin.p@correo.mx"],
-      ["Kevin Aguilar", "5522334455", "kevin.a@correo.mx"],
-      ["Luis Trejo", "5533445566", "luis.t@correo.mx"],
+      ["Aarón Villalobos", "00000001", "aaron.v@example.com"],
+      ["Bruno Castañeda", "00000002", "bruno.c@example.com"],
+      ["Carlos Mendoza", "00000003", "carlos.m@example.com"],
+      ["Damián Ortega", "00000004", "damian.o@example.com"],
+      ["Emiliano Rivas", "00000005", "emiliano.r@example.com"],
+      ["Fernando Lozano", "00000006", "fer.lozano@example.com"],
+      ["Gael Domínguez", "00000007", "gael.d@example.com"],
+      ["Hugo Barrera", "00000008", "hugo.b@example.com"],
+      ["Iker Salgado", "00000009", "iker.s@example.com"],
+      ["Joaquín Paredes", "00000010", "joaquin.p@example.com"],
+      ["Kevin Aguilar", "00000011", "kevin.a@example.com"],
+      ["Luis Trejo", "00000012", "luis.t@example.com"],
     ];
     const clients = clientSeeds.map(([nombre, telefono, email], i) => ({
       id: `cl-demo-${i + 1}`,
@@ -433,7 +433,7 @@
     const nombre = String(payload.cliente_nombre || "").trim();
     const telefono = String(payload.cliente_telefono || "").trim();
     if (nombre.length < 2) throw new Error("Escribe tu nombre completo.");
-    if (U.normalizePhone(telefono).length < 10) throw new Error("Escribe un teléfono de 10 dígitos.");
+    if (U.normalizePhone(telefono).length !== 8) throw new Error("Escribe un teléfono salvadoreño de 8 dígitos.");
     if (!payload.fecha || !payload.hora) throw new Error("Elige fecha y hora.");
     const returningClient = payload.codigo_cliente
       ? findDemoClientByCredentials(db, { codigo_cliente: payload.codigo_cliente, nombre, telefono })

@@ -37,5 +37,7 @@ La guía detallada está en [`docs/google-sheets-setup.md`](../docs/google-sheet
 - El Web App debe ejecutarse como **Yo** y con acceso **Cualquier persona** para que el sitio público pueda reservar.
 - La hoja permanece privada; el script es el único intermediario.
 - Después de editar `Code.gs`, crea una **Nueva versión** de la implementación para que los cambios se publiquen.
+- Para actualizar una instalación existente, ejecuta `migrar()` primero. En este proyecto, el backend usa la zona horaria `America/El_Salvador`, moneda USD y teléfonos locales de 8 dígitos.
+- La migración cambia valores regionales de ejemplo reconocidos y precios semilla que coincidan exactamente; conserva los precios y datos comerciales personalizados.
 - Las fechas y horas se guardan como texto ISO (`YYYY-MM-DD`, `HH:mm`) para evitar conversiones automáticas de Sheets.
 - Las acciones de escritura usan `LockService` para evitar citas duplicadas.

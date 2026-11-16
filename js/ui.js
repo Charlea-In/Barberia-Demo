@@ -69,7 +69,7 @@
       numeric: { day: "2-digit", month: "2-digit", year: "numeric" },
       month: { month: "long", year: "numeric" },
     }[style] || { day: "numeric", month: "short" };
-    const out = new Intl.DateTimeFormat("es-MX", opts).format(d);
+    const out = new Intl.DateTimeFormat(C.currency.locale, opts).format(d);
     return out.charAt(0).toUpperCase() + out.slice(1);
   }
 
@@ -82,11 +82,11 @@
   }
 
   function weekdayShort(iso) {
-    return new Intl.DateTimeFormat("es-MX", { weekday: "short" }).format(parseISO(iso)).replace(".", "");
+    return new Intl.DateTimeFormat(C.currency.locale, { weekday: "short" }).format(parseISO(iso)).replace(".", "");
   }
 
   function monthShort(iso) {
-    return new Intl.DateTimeFormat("es-MX", { month: "short" }).format(parseISO(iso)).replace(".", "");
+    return new Intl.DateTimeFormat(C.currency.locale, { month: "short" }).format(parseISO(iso)).replace(".", "");
   }
 
   /* ---------- Horas ---------- */
@@ -127,7 +127,7 @@
 
   function normalizePhone(phone) {
     const digits = String(phone || "").replace(/\D/g, "");
-    return digits.length > 10 ? digits.slice(-10) : digits;
+    return digits.length === 11 && digits.startsWith("503") ? digits.slice(3) : digits;
   }
 
   function uid(prefix) {

@@ -201,6 +201,17 @@
   }
 
   /* ---------- Configuración de negocio ---------- */
+  function svWhatsAppNumber(value) {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (digits.length === 8) return `503${digits}`;
+    return digits.length === 11 && digits.startsWith("503") ? digits : "";
+  }
+
+  function svPhoneDisplay(value) {
+    const local = U.normalizePhone(value);
+    return local.length === 8 ? `+503 ${local.slice(0, 4)} ${local.slice(4)}` : "";
+  }
+
   function applyConfig(config) {
     const businessName = String(config.nombre_negocio || C.brand.name).trim();
     const brandWords = businessName.split(/\s+/);
@@ -211,7 +222,7 @@
       brand_first: firstName,
       brand_second: secondName,
       direccion: config.direccion || C.contact.address,
-      telefono: config.telefono || C.contact.phone,
+      telefono: svPhoneDisplay(config.telefono || C.contact.phone),
       email: config.email || C.contact.email,
       ciudad: config.ciudad || C.brand.city,
       anio: C.brand.established,
@@ -219,19 +230,29 @@
     };
     $$("[data-config]").forEach((el) => {
       const value = map[el.dataset.config];
-      if (value) el.textContent = value;
+      el.textContent = value || "";
+      if (["direccion", "telefono", "email"].includes(el.dataset.config)) el.hidden = !value;
     });
 
-    const phoneDigits = String(config.telefono || C.contact.phone).replace(/\D/g, "");
-    const waDigits = String(config.whatsapp || C.contact.whatsapp).replace(/\D/g, "");
+    const normalizedPhone = U.normalizePhone(config.telefono || C.contact.phone);
+    const phoneDigits = normalizedPhone.length === 8 ? normalizedPhone : "";
+    const waDigits = svWhatsAppNumber(config.whatsapp || C.contact.whatsapp);
     const email = config.email || C.contact.email;
     const instagram = String(config.instagram || C.contact.instagram).replace(/^@/, "");
     const address = config.direccion || C.contact.address;
+    const addressBlock = $("[data-contact-address]");
+    if (addressBlock) addressBlock.hidden = !address;
+    const contactFooter = $("[data-contact-footer]");
+    if (contactFooter) contactFooter.hidden = !(address || phoneDigits || email);
 
-    $$('[data-config-link="phone"]').forEach((a) => (a.href = `tel:+${phoneDigits}`));
+    $$('[data-config-link="phone"]').forEach((a) => {
+      a.href = phoneDigits ? `tel:+503${phoneDigits}` : "#";
+      a.hidden = !phoneDigits;
+    });
     $$('[data-config-link="email"]').forEach((a) => {
-      a.href = `mailto:${email}`;
-      a.textContent = email;
+      a.href = email ? `mailto:${email}` : "#";
+      a.textContent = email || "";
+      a.hidden = !email;
     });
     $$('[data-config-link="instagram"]').forEach((a) => {
       a.href = `https://instagram.com/${instagram}`;
@@ -239,6 +260,7 @@
     });
     $$('[data-config-link="maps"]').forEach((a) => {
       a.href = config.maps_url || `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+      a.hidden = !address;
     });
 
     document.title = `${businessName} — Reserva tu cita`;
@@ -249,11 +271,17 @@
     });
 
     const waMessage = encodeURIComponent(`Hola, quiero reservar una cita en ${config.nombre_negocio || C.brand.name}.`);
-    const waLink = `https://wa.me/${waDigits}?text=${waMessage}`;
+    const waLink = waDigits ? `https://wa.me/${waDigits}?text=${waMessage}` : "#";
     const wa = $("#whatsapp-link");
-    if (wa) wa.href = waLink;
+    if (wa) {
+      wa.href = waLink;
+      wa.hidden = !waDigits;
+    }
     const phoneLink = $("#phone-link");
-    if (phoneLink) phoneLink.href = `tel:+${phoneDigits}`;
+    if (phoneLink) {
+      phoneLink.href = phoneDigits ? `tel:+503${phoneDigits}` : "#";
+      phoneLink.hidden = !phoneDigits;
+    }
   }
 
   /* ---------- Reserva ---------- */
@@ -415,11 +443,12 @@
       }
       const av = b.availability;
       if (!av || !av.slots || !av.slots.length) {
-        const wa = `https://wa.me/${String(state.config.whatsapp || C.contact.whatsapp).replace(/\D/g, "")}`;
+        const waNumber = svWhatsAppNumber(state.config.whatsapp || C.contact.whatsapp);
+        const wa = waNumber ? `<div style="margin-top:16px"><a class="btn btn--outline btn--sm" href="https://wa.me/${waNumber}" target="_blank" rel="noopener">Escribir por WhatsApp</a></div>` : "";
         return `<div class="empty-state">
           <strong>${av && av.closed ? "Ese día está cerrado" : "No quedan horarios para este día"}</strong>
-          Prueba con otra fecha, otro barbero o escríbenos por WhatsApp.
-          <div style="margin-top:16px"><a class="btn btn--outline btn--sm" href="${wa}" target="_blank" rel="noopener">Escribir por WhatsApp</a></div>
+          ${waNumber ? "Prueba con otra fecha, otro barbero o escríbenos por WhatsApp." : "Prueba con otra fecha u otro barbero."}
+          ${wa}
         </div>`;
       }
       const groups = [
@@ -457,7 +486,7 @@
               <form id="returning-client-form" class="form-grid">
                 <label class="field"><span class="field__label">Código de cliente</span><input class="input" name="codigo_cliente" value="${U.esc(b.clientLookup.code)}" placeholder="BA-01" autocomplete="off" required></label>
                 <label class="field"><span class="field__label">Nombre completo</span><input class="input" name="nombre" value="${U.esc(b.clientLookup.nombre)}" autocomplete="name" required></label>
-                <label class="field"><span class="field__label">Teléfono (10 dígitos)</span><input class="input" name="telefono" type="tel" inputmode="numeric" value="${U.esc(b.clientLookup.telefono)}" placeholder="5512345678" autocomplete="tel" required></label>
+                <label class="field"><span class="field__label">Teléfono salvadoreño (8 dígitos)</span><input class="input" name="telefono" type="tel" inputmode="numeric" value="${U.esc(b.clientLookup.telefono)}" placeholder="00000000" autocomplete="tel" required></label>
                 <div class="field field--full"><button class="btn btn--outline btn--sm" type="submit" ${b.clientLookup.loading ? "disabled" : ""}>${b.clientLookup.loading ? "Buscando…" : "Buscar mi perfil"}</button></div>
                 ${b.clientLookup.message ? `<div class="field field--full field-hint ${b.clientLookup.isError ? "field-hint--error" : "field-hint--success"}" role="status">${U.esc(b.clientLookup.message)}${b.clientLookup.isError ? ` <button class="link-arrow" type="button" data-new-client-mode>Continuar como cliente nuevo</button>` : ""}</div>` : ""}
               </form>
@@ -470,11 +499,11 @@
         </div>
         <div class="field">
           <label for="bk-tel">Teléfono *</label>
-          <input class="input" id="bk-tel" name="telefono" type="tel" inputmode="tel" autocomplete="tel" value="${U.esc(client.telefono || "")}" placeholder="55 1234 5678" required>
+          <input class="input" id="bk-tel" name="telefono" type="tel" inputmode="tel" autocomplete="tel" value="${U.esc(client.telefono || "")}" placeholder="0000 0000" required>
         </div>
         <div class="field">
           <label for="bk-email">Email (opcional)</label>
-          <input class="input" id="bk-email" name="email" type="email" autocomplete="email" value="${U.esc(client.email || "")}" placeholder="tu@correo.mx">
+          <input class="input" id="bk-email" name="email" type="email" autocomplete="email" value="${U.esc(client.email || "")}" placeholder="tu@correo.com">
         </div>
         <div class="field field--full">
           <label for="bk-notas">Notas (opcional)</label>
@@ -529,7 +558,7 @@
 
   function successHtml() {
     const r = state.booking.result;
-    const waDigits = String(state.config.whatsapp || C.contact.whatsapp).replace(/\D/g, "");
+    const waDigits = svWhatsAppNumber(state.config.whatsapp || C.contact.whatsapp);
     const waText = encodeURIComponent(
       `Hola, reservé una cita en ${C.brand.name}. Código de cliente ${r.codigo_cliente} · Código de cita ${r.codigo} · ${U.formatDate(r.fecha, "short")} ${r.hora} · ${r.servicio_nombre}`
     );
@@ -550,7 +579,7 @@
       </div>
       <div class="success-actions">
         <button class="btn btn--primary btn--sm" type="button" data-ics>Guardar en calendario</button>
-        <a class="btn btn--outline btn--sm" href="https://wa.me/${waDigits}?text=${waText}" target="_blank" rel="noopener">WhatsApp</a>
+        ${waDigits ? `<a class="btn btn--outline btn--sm" href="https://wa.me/${waDigits}?text=${waText}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
         <button class="btn btn--ghost btn--sm" type="button" data-close-modal>Listo</button>
       </div>
     </div>`;
@@ -613,10 +642,10 @@
     };
     const b = state.booking;
     b.clientLookup = { ...b.clientLookup, ...identity, loading: true, message: "", isError: false };
-    if (identity.nombre.length < 2 || U.normalizePhone(identity.telefono).length < 10 || !/^BA-\d{2,}$/.test(identity.codigo_cliente)) {
+    if (identity.nombre.length < 2 || U.normalizePhone(identity.telefono).length !== 8 || !/^BA-\d{2,}$/.test(identity.codigo_cliente)) {
       b.clientLookup.loading = false;
       b.clientLookup.open = true;
-      b.clientLookup.message = "Revisa tu código BA, nombre y teléfono de 10 dígitos.";
+      b.clientLookup.message = "Revisa tu código BA, nombre y teléfono salvadoreño de 8 dígitos.";
       b.clientLookup.isError = true;
       renderBooking();
       return;
@@ -653,8 +682,8 @@
       $("#bk-nombre").focus();
       return;
     }
-    if (U.normalizePhone(client.telefono).length < 10) {
-      U.toast("Escribe un teléfono de 10 dígitos.", "error");
+    if (U.normalizePhone(client.telefono).length !== 8) {
+      U.toast("Escribe un teléfono salvadoreño de 8 dígitos.", "error");
       $("#bk-tel").focus();
       return;
     }
@@ -955,8 +984,8 @@
         nombre: $("#lookup-name").value.trim(),
         telefono: $("#lookup-phone").value.trim(),
       };
-      if (!/^BA-\d{2,}$/.test(identity.codigo_cliente) || clientNameKey(identity.nombre).length < 2 || U.normalizePhone(identity.telefono).length < 10) {
-        U.toast("Revisa tu código BA, nombre y teléfono de 10 dígitos.", "error");
+      if (!/^BA-\d{2,}$/.test(identity.codigo_cliente) || clientNameKey(identity.nombre).length < 2 || U.normalizePhone(identity.telefono).length !== 8) {
+        U.toast("Revisa tu código BA, nombre y teléfono salvadoreño de 8 dígitos.", "error");
         if (!/^BA-\d{2,}$/.test(identity.codigo_cliente)) $("#lookup-code").focus();
         else if (clientNameKey(identity.nombre).length < 2) $("#lookup-name").focus();
         else $("#lookup-phone").focus();
