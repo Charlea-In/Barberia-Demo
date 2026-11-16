@@ -798,21 +798,27 @@
   /* ---------- Cliente HTTP (modo Sheets) ---------- */
   async function request(action, payload = {}) {
     if (DEMO) throw new Error("request() no se usa en modo demo");
-    const response = await fetch(C.api.url, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action, payload }),
-      redirect: "follow",
-    });
-    if (!response.ok) throw new Error(`Error de conexión (${response.status}). Revisa la URL del Web App.`);
-    let json;
+    const requestContext = { action, payload };
+    window.dispatchEvent(new CustomEvent("sheets:request:start", { detail: requestContext }));
     try {
-      json = await response.json();
-    } catch (e) {
-      throw new Error("La respuesta del servidor no es JSON válido. Revisa el despliegue de Apps Script.");
+      const response = await fetch(C.api.url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, payload }),
+        redirect: "follow",
+      });
+      if (!response.ok) throw new Error(`Error de conexión (${response.status}). Revisa la URL del Web App.`);
+      let json;
+      try {
+        json = await response.json();
+      } catch (e) {
+        throw new Error("La respuesta del servidor no es JSON válido. Revisa el despliegue de Apps Script.");
+      }
+      if (!json || json.ok !== true) throw new Error((json && json.error) || "Error del servidor.");
+      return json.data;
+    } finally {
+      window.dispatchEvent(new CustomEvent("sheets:request:end", { detail: requestContext }));
     }
-    if (!json || json.ok !== true) throw new Error((json && json.error) || "Error del servidor.");
-    return json.data;
   }
 
   function adminPayload(payload = {}) {

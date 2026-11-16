@@ -1339,6 +1339,20 @@ table.data .sub { font-size: 10.5px; color: var(--admin-muted); margin-top: 1px;
 .barbero-live-chip[hidden] { display: none; }
 .barbero-sync { font-size: 10px; color: var(--admin-muted); white-space: nowrap; }
 
+.barbero-loading {
+  position: fixed; z-index: 180; left: 50%; bottom: max(20px, env(safe-area-inset-bottom));
+  transform: translateX(-50%); display: flex; align-items: center; gap: 10px;
+  min-height: 64px; padding: 7px 16px 7px 8px; border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px; background: rgba(24,23,22,.78); color: #fffaf2;
+  box-shadow: 0 8px 28px rgba(0,0,0,.2); backdrop-filter: blur(8px);
+  font-size: 12px; font-weight: 600; letter-spacing: .01em; pointer-events: none;
+  animation: barbero-loading-in .18s ease-out both;
+}
+.barbero-loading[hidden] { display: none; }
+.barbero-loading__animation { width: 48px; height: 48px; flex: 0 0 48px; }
+.barbero-loading__animation svg { display: block; width: 100%; height: 100%; }
+@keyframes barbero-loading-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+
 @media (max-width: 720px) {
   .barbero-who__role, .barbero-sync { display: none; }
   .barbero-shell .topbar { gap: 8px; }
