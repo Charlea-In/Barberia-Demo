@@ -317,7 +317,15 @@
     const isLive = a.estado === "en_curso";
 
     let actions = "";
+    if (isPending) {
+      actions += `<button class="btn-admin btn-admin--primary" type="button" data-action="confirm" data-id="${a.id}">Confirmar</button>`;
+    }
     if (isPending || isConfirmed) {
+      const phone = String(a.cliente_telefono || "").replace(/\D/g, "");
+      const message = `Hola ${a.cliente_nombre || ""}, tu cita está confirmada. Te veo a las ${a.hora}. Recuerda llegar 5 minutos antes. Si termino el corte anterior antes de tu cita, con gusto podemos iniciar antes.`;
+      if (phone) {
+        actions += `<a class="btn-admin" href="https://wa.me/${phone}?text=${encodeURIComponent(message)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`;
+      }
       actions += `<button class="btn-admin btn-admin--primary" type="button" data-action="start" data-id="${a.id}">Iniciar</button>`;
     }
     if (isLive) {
