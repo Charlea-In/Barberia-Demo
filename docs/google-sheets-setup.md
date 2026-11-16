@@ -192,7 +192,7 @@ También puedes usar el workflow incluido en `.github/workflows/pages.yml`:
 | `Config` | `clave`, `valor` |
 | `Servicios` | `id`, `nombre`, `descripcion`, `duracion_min`, `precio`, `activo`, `orden` |
 | `Barberos` | `id`, `nombre`, `rol`, `especialidad`, `telefono`, `comision_pct`, `activo`, `color` |
-| `Clientes` | `id`, `nombre`, `telefono`, `email`, `notas`, `creado_en`, `total_citas`, `total_gastado`, `ultima_visita` |
+| `Clientes` | `id`, `nombre`, `telefono`, `email`, `notas`, `creado_en`, `total_citas`, `total_gastado`, `ultima_visita`, `codigo_cliente` |
 | `Citas` | `id`, `fecha`, `hora`, `cliente_id`, `cliente_nombre`, `cliente_telefono`, `servicio_id`, `servicio_nombre`, `barbero_id`, `barbero_nombre`, `precio`, `duracion_min`, `estado`, `notas`, `creado_en`, `origen`, `inicio_en`, `fin_en`, `duracion_real_min` |
 | `Ingresos` | `id`, `fecha`, `monto`, `categoria`, `descripcion`, `cita_id`, `metodo_pago`, `barbero_id`, `creado_en` |
 | `Gastos` | `id`, `fecha`, `monto`, `categoria`, `descripcion`, `metodo_pago`, `creado_en` |
@@ -219,7 +219,9 @@ Cada vez que modifiques `Code.gs`:
 
 La URL `/exec` se mantiene. Si creas una implementación nueva, cambia la URL en `js/config.js`.
 
-> Después de actualizar `Code.gs`, ejecuta **`migrar()`** una vez desde el editor. Actualiza los encabezados que falten sin borrar los datos existentes y elimina claves de barbero de demostración conocidas. Luego asigna claves personales a cada barbero desde el panel de administración.
+> Después de actualizar `Code.gs`, ejecuta **`migrar()`** una vez desde el editor. Actualiza los encabezados que falten sin borrar los datos existentes, asigna un código `BA-01`, `BA-02`, etc. a los clientes actuales y elimina claves de barbero de demostración conocidas. Luego crea una **Nueva versión** de la implementación web para publicar el backend actualizado.
+
+Cada cliente nuevo recibe automáticamente un código. Para consultar el historial o vincular otra reserva, el cliente ingresa ese código junto con el nombre y teléfono registrados. Al reservar por primera vez, debe guardar el código que aparece en la confirmación.
 
 ---
 

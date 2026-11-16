@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20261115a">
+  <link rel="stylesheet" href="css/styles.css?v=20261115c">
 </head>
 <body>
   <a class="sr-only" href="#inicio">Saltar al contenido</a>
@@ -254,7 +254,7 @@
         <aside class="booking__aside">
           <h3>Tu cita</h3>
           <div class="summary" id="booking-summary"></div>
-          <p class="summary__note">Sin anticipo. Si necesitas cancelar, puedes hacerlo desde “Mis citas” con el teléfono con el que reservaste.</p>
+          <p class="summary__note">Sin anticipo. Consulta o cancela tus citas desde “Mis citas” con tu código de cliente, nombre y teléfono.</p>
           <div class="summary__brand" data-config="nombre_negocio">Demo Barber</div>
         </aside>
       </div>
@@ -271,20 +271,21 @@
       <div class="lookup-panel">
         <span class="eyebrow">Consulta</span>
         <h2 class="booking__title" id="lookup-title" style="margin-top:12px">Mis citas</h2>
-        <p class="booking__sub">Escribe el teléfono con el que reservaste para ver, cancelar o guardar tu cita.</p>
+        <p class="booking__sub">Ingresa tu código de cliente, nombre y teléfono para ver tu historial y tus próximas citas.</p>
         <form class="lookup-form" id="lookup-form">
-          <label class="sr-only" for="lookup-phone">Teléfono</label>
-          <input class="input" id="lookup-phone" name="telefono" type="tel" inputmode="tel" autocomplete="tel" placeholder="55 1234 5678" required>
-          <button class="btn btn--primary" type="submit">Buscar</button>
+          <label class="field"><span class="field__label">Código de cliente</span><input class="input" id="lookup-code" name="codigo_cliente" placeholder="BA-01" autocomplete="off" required></label>
+          <label class="field"><span class="field__label">Nombre completo</span><input class="input" id="lookup-name" name="nombre" autocomplete="name" required></label>
+          <label class="field"><span class="field__label">Teléfono (10 dígitos)</span><input class="input" id="lookup-phone" name="telefono" type="tel" inputmode="numeric" autocomplete="tel" placeholder="5512345678" required></label>
+          <button class="btn btn--primary" type="submit">Ver mis citas</button>
         </form>
         <div id="lookup-results" aria-live="polite"></div>
       </div>
     </div>
   </div>
 
-  <script src="js/config.js?v=20261114b"></script>
+  <script src="js/config.js?v=20261115c"></script>
   <script src="js/ui.js?v=20261113"></script>
-  <script src="js/store.js?v=20261114b"></script>
-  <script src="js/app.js?v=20261115c"></script>
+  <script src="js/store.js?v=20261115b"></script>
+  <script src="js/app.js?v=20261115d"></script>
 </body>
 </html>

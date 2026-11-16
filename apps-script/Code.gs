@@ -37,7 +37,7 @@ const HEADERS = {
   config: ["clave", "valor"],
   services: ["id", "nombre", "descripcion", "duracion_min", "precio", "activo", "orden"],
   barbers: ["id", "nombre", "rol", "especialidad", "telefono", "comision_pct", "activo", "color", "clave", "photo_url"],
-  clients: ["id", "nombre", "telefono", "email", "notas", "creado_en", "total_citas", "total_gastado", "ultima_visita"],
+  clients: ["id", "nombre", "telefono", "email", "notas", "creado_en", "total_citas", "total_gastado", "ultima_visita", "codigo_cliente"],
   appointments: [
     "id", "fecha", "hora", "cliente_id", "cliente_nombre", "cliente_telefono",
     "servicio_id", "servicio_nombre", "barbero_id", "barbero_nombre",
@@ -55,7 +55,7 @@ const TEXT_COLUMNS = {
   config: ["valor"],
   services: [],
   barbers: ["clave", "photo_url"],
-  clients: ["telefono", "creado_en", "ultima_visita"],
+  clients: ["telefono", "creado_en", "ultima_visita", "codigo_cliente"],
   appointments: ["fecha", "hora", "cliente_telefono", "creado_en", "inicio_en", "fin_en"],
   incomes: ["fecha", "creado_en"],
   expenses: ["fecha", "creado_en"],
@@ -132,6 +132,7 @@ function setup() {
   seedConfig_();
   seedRecords_("services", DEFAULTS.services);
   seedRecords_("barbers", DEFAULTS.barbers);
+  assignMissingClientCodes_(getRecords_("clients"));
 
   // Elimina la hoja vacía por defecto si sigue ahí.
   const defaultSheet = ss.getSheetByName("Sheet1") || ss.getSheetByName("Hoja 1");
@@ -166,6 +167,7 @@ function configurarClave(clave) {
 function migrar() {
   const ss = getSpreadsheet_();
   Object.keys(HEADERS).forEach((key) => ensureSheet_(ss, key));
+  const clientCodesAdded = assignMissingClientCodes_(getRecords_("clients"));
   const configRows = readRaw_("config");
   const currentConfig = {};
   configRows.forEach((row) => {
@@ -195,7 +197,7 @@ function migrar() {
     writeRecord_("barbers", barber);
     cleared += 1;
   });
-  Logger.log("✅ Hojas actualizadas. Claves de demo eliminadas: " + cleared + ". Configuración del negocio actualizada: " + Object.keys(configUpdates).join(", ") + ".");
+  Logger.log("✅ Hojas actualizadas. Códigos de cliente asignados: " + clientCodesAdded + ". Claves de demo eliminadas: " + cleared + ". Configuración del negocio actualizada: " + Object.keys(configUpdates).join(", ") + ".");
 }
 
 /** Comprueba que la hoja y la clave estén listas. */
@@ -242,7 +244,7 @@ function doPost(e) {
         data = withLock_(() => book_(payload));
         break;
       case "lookup":
-        data = lookup_(payload);
+        data = withLock_(() => lookup_(payload));
         break;
       case "cancel":
         data = withLock_(() => cancel_(payload));
@@ -327,6 +329,11 @@ function book_(payload) {
   if (normalizePhone_(telefono).length < 10) throw new Error("Escribe un teléfono de 10 dígitos.");
   if (!fecha || !hora) throw new Error("Elige fecha y hora.");
 
+  const clients = getRecords_("clients");
+  const returningClient = payload.codigo_cliente
+    ? findClientByCredentials_({ codigo_cliente: payload.codigo_cliente, nombre: nombre, telefono: telefono }, clients)
+    : null;
+
   const services = getRecords_("services");
   const svc = services.filter((s) => s.id === payload.servicio_id && s.activo !== false)[0];
   if (!svc) throw new Error("El servicio ya no está disponible.");
@@ -358,10 +365,10 @@ function book_(payload) {
   );
   if (duplicate) throw new Error("Ya tienes una cita a esa hora. Revisa “Mis citas”.");
 
-  const clients = getRecords_("clients");
   const client = ensureClient_(clients, {
-    cliente_nombre: nombre,
-    cliente_telefono: telefono,
+    cliente_id: returningClient ? returningClient.id : "",
+    cliente_nombre: returningClient ? returningClient.nombre : nombre,
+    cliente_telefono: returningClient ? returningClient.telefono : telefono,
     cliente_email: payload.cliente_email || "",
   });
 
@@ -385,20 +392,22 @@ function book_(payload) {
   };
 
   writeRecord_("appointments", appt);
-  return publicAppointment_(appt);
+  return Object.assign({}, publicAppointment_(appt), { codigo_cliente: client.codigo_cliente });
 }
 
 function lookup_(payload) {
   rateLimitPublic_("lookup", payload.telefono);
-  const phone = normalizePhone_(payload.telefono);
-  if (phone.length < 10) throw new Error("Escribe el teléfono con el que reservaste.");
-  const since = addDays_(today_(), -120);
+  const clients = getRecords_("clients");
+  const client = findClientByCredentials_(payload, clients);
+  const phone = normalizePhone_(client.telefono);
   const appointments = getRecords_("appointments")
-    .filter((a) => normalizePhone_(a.cliente_telefono) === phone && a.fecha >= since)
+    .filter((a) => a.cliente_id === client.id || (!a.cliente_id && normalizePhone_(a.cliente_telefono) === phone))
     .sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora))
-    .slice(0, 40)
     .map(publicAppointment_);
-  return { appointments: appointments };
+  return {
+    client: { codigo_cliente: client.codigo_cliente, nombre: client.nombre, telefono: client.telefono },
+    appointments: appointments,
+  };
 }
 
 function cancel_(payload) {
@@ -406,8 +415,9 @@ function cancel_(payload) {
   const appointments = getRecords_("appointments");
   const appt = appointments.filter((a) => a.id === payload.id)[0];
   if (!appt) throw new Error("No encontramos esa cita.");
-  if (normalizePhone_(appt.cliente_telefono) !== normalizePhone_(payload.telefono)) {
-    throw new Error("El teléfono no coincide con la cita.");
+  const client = findClientByCredentials_(payload, getRecords_("clients"));
+  if ((appt.cliente_id && appt.cliente_id !== client.id) || normalizePhone_(appt.cliente_telefono) !== normalizePhone_(client.telefono)) {
+    throw new Error("La cita no pertenece a este perfil de cliente.");
   }
   if (["pendiente", "confirmada"].indexOf(appt.estado) === -1) {
     throw new Error("Esta cita ya no se puede cancelar.");
@@ -673,6 +683,7 @@ function adminSave_(payload) {
   if (entity === "clients") {
     if (!str_(input.nombre)) throw new Error("El cliente necesita un nombre.");
     input.telefono = str_(input.telefono);
+    input.codigo_cliente = str_(input.codigo_cliente) || nextClientCode_(list);
     input.creado_en = date_(input.creado_en) || today_();
     input.total_citas = Number(input.total_citas) || 0;
     input.total_gastado = Number(input.total_gastado) || 0;
@@ -920,6 +931,7 @@ function ensureClient_(clients, data) {
       id: uid_("cl"),
       nombre: str_(data.cliente_nombre || data.nombre) || "Cliente",
       telefono: str_(data.cliente_telefono || data.telefono),
+      codigo_cliente: nextClientCode_(clients),
       email: str_(data.cliente_email || data.email),
       notas: "",
       creado_en: today_(),
@@ -933,6 +945,10 @@ function ensureClient_(clients, data) {
   }
 
   let dirty = false;
+  if (!client.codigo_cliente) {
+    client.codigo_cliente = nextClientCode_(clients);
+    dirty = true;
+  }
   const nombre = str_(data.cliente_nombre || data.nombre);
   const email = str_(data.cliente_email || data.email);
   if (nombre && nombre !== client.nombre) {
@@ -945,6 +961,47 @@ function ensureClient_(clients, data) {
   }
   if (dirty) writeRecord_("clients", client);
   return client;
+}
+
+function nextClientCode_(clients) {
+  const largest = clients.reduce((max, client) => {
+    const match = String(client.codigo_cliente || "").match(/^BA-(\d+)$/i);
+    return match ? Math.max(max, Number(match[1]) || 0) : max;
+  }, 0);
+  return "BA-" + String(largest + 1).padStart(2, "0");
+}
+
+function assignMissingClientCodes_(clients) {
+  let added = 0;
+  clients.forEach((client) => {
+    if (client.codigo_cliente) return;
+    client.codigo_cliente = nextClientCode_(clients);
+    writeRecord_("clients", client);
+    added += 1;
+  });
+  return added;
+}
+
+function findClientByCredentials_(payload, clients) {
+  const code = str_(payload.codigo_cliente).toUpperCase();
+  const name = clientNameKey_(payload.nombre);
+  const phone = normalizePhone_(payload.telefono);
+  if (!/^BA-\d{2,}$/.test(code) || name.length < 2 || phone.length < 10) {
+    throw new Error("Revisa tu código de cliente, nombre y teléfono.");
+  }
+  const client = clients.filter((item) =>
+    String(item.codigo_cliente || "").toUpperCase() === code &&
+    clientNameKey_(item.nombre) === name &&
+    normalizePhone_(item.telefono) === phone
+  )[0];
+  if (!client) {
+    throw new Error("No encontramos un cliente con esos datos. Revisa tu información o continúa como cliente nuevo.");
+  }
+  return client;
+}
+
+function clientNameKey_(value) {
+  return str_(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").toLowerCase();
 }
 
 function recomputeClient_(clients, appointments, clientId) {
@@ -1188,6 +1245,7 @@ function normalize_(entity, raw) {
   if (entity === "clients") {
     return {
       id: str_(raw.id),
+      codigo_cliente: str_(raw.codigo_cliente),
       nombre: str_(raw.nombre),
       telefono: str_(raw.telefono),
       email: str_(raw.email),

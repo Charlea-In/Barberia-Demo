@@ -45,12 +45,17 @@
       const raw = localStorage.getItem(DB_KEY);
       if (raw) {
         const db = JSON.parse(raw);
-        if (db && db.version === 1) { db.availabilityBlocks = db.availabilityBlocks || []; return db; }
+        if (db && db.version === 1) {
+          db.availabilityBlocks = db.availabilityBlocks || [];
+          if (assignDemoClientCodes(db)) saveDB(db);
+          return db;
+        }
       }
     } catch (e) {
       console.warn("No se pudo leer la base demo, se regenera.", e);
     }
     const db = seedDB();
+    assignDemoClientCodes(db);
     saveDB(db);
     return db;
   }
@@ -60,6 +65,44 @@
       .replace(/[^a-z0-9]/gi, "")
       .slice(-6)
       .toUpperCase();
+  }
+
+  function nextClientCode(clients) {
+    const highest = clients.reduce((max, client) => {
+      const match = String(client.codigo_cliente || "").match(/^BA-(\d+)$/i);
+      return match ? Math.max(max, Number(match[1]) || 0) : max;
+    }, 0);
+    return `BA-${String(highest + 1).padStart(2, "0")}`;
+  }
+
+  function assignDemoClientCodes(db) {
+    let changed = false;
+    (db.clients || []).forEach((client) => {
+      if (client.codigo_cliente) return;
+      client.codigo_cliente = nextClientCode(db.clients);
+      changed = true;
+    });
+    return changed;
+  }
+
+  function clientNameKey(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  function findDemoClientByCredentials(db, payload) {
+    const code = String(payload.codigo_cliente || "").trim().toUpperCase();
+    const name = clientNameKey(payload.nombre);
+    const phone = U.normalizePhone(payload.telefono);
+    if (!/^BA-\d{2,}$/.test(code) || name.length < 2 || phone.length < 10) {
+      throw new Error("Revisa tu código de cliente, nombre y teléfono.");
+    }
+    const client = (db.clients || []).find((item) =>
+      String(item.codigo_cliente || "").toUpperCase() === code &&
+      clientNameKey(item.nombre) === name &&
+      U.normalizePhone(item.telefono) === phone
+    );
+    if (!client) throw new Error("No encontramos un cliente con esos datos. Revisa tu información o continúa como cliente nuevo.");
+    return client;
   }
 
   function publicAppointment(a) {
@@ -120,6 +163,7 @@
     if (!client) {
       client = {
         id: U.uid("cl"),
+        codigo_cliente: nextClientCode(db.clients),
         nombre: data.cliente_nombre || data.nombre || "Cliente",
         telefono: data.cliente_telefono || data.telefono || "",
         email: data.cliente_email || data.email || "",
@@ -131,6 +175,7 @@
       };
       db.clients.push(client);
     } else {
+      if (!client.codigo_cliente) client.codigo_cliente = nextClientCode(db.clients);
       if (data.cliente_nombre || data.nombre) client.nombre = data.cliente_nombre || data.nombre;
       if (data.cliente_email || data.email) client.email = data.cliente_email || data.email;
     }
@@ -224,6 +269,7 @@
     ];
     const clients = clientSeeds.map(([nombre, telefono, email], i) => ({
       id: `cl-demo-${i + 1}`,
+      codigo_cliente: `BA-${String(i + 1).padStart(2, "0")}`,
       nombre,
       telefono,
       email,
@@ -389,6 +435,9 @@
     if (nombre.length < 2) throw new Error("Escribe tu nombre completo.");
     if (U.normalizePhone(telefono).length < 10) throw new Error("Escribe un teléfono de 10 dígitos.");
     if (!payload.fecha || !payload.hora) throw new Error("Elige fecha y hora.");
+    const returningClient = payload.codigo_cliente
+      ? findDemoClientByCredentials(db, { codigo_cliente: payload.codigo_cliente, nombre, telefono })
+      : null;
 
     const svc = db.services.find((s) => s.id === payload.servicio_id && s.activo !== false);
     if (!svc) throw new Error("El servicio ya no está disponible.");
@@ -422,8 +471,9 @@
     if (duplicate) throw new Error("Ya tienes una cita a esa hora. Revisa “Mis citas”.");
 
     const client = ensureClient(db, {
-      cliente_nombre: nombre,
-      cliente_telefono: telefono,
+      cliente_id: returningClient ? returningClient.id : "",
+      cliente_nombre: returningClient ? returningClient.nombre : nombre,
+      cliente_telefono: returningClient ? returningClient.telefono : telefono,
       cliente_email: payload.cliente_email || "",
     });
 
@@ -447,29 +497,29 @@
     };
     db.appointments.push(appt);
     saveDB(db);
-    return publicAppointment(appt);
+    return { ...publicAppointment(appt), codigo_cliente: client.codigo_cliente };
   }
 
   function demoLookup(payload) {
-    const phone = U.normalizePhone(payload.telefono);
-    if (phone.length < 10) throw new Error("Escribe el teléfono con el que reservaste.");
     const db = loadDB();
-    const since = U.addDays(U.todayISO(), -120);
+    const client = findDemoClientByCredentials(db, payload);
+    const phone = U.normalizePhone(client.telefono);
     const list = db.appointments
-      .filter((a) => U.normalizePhone(a.cliente_telefono) === phone && a.fecha >= since)
+      .filter((a) => a.cliente_id === client.id || (!a.cliente_id && U.normalizePhone(a.cliente_telefono) === phone))
       .sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora))
-      .slice(0, 40)
       .map(publicAppointment);
-    return { appointments: list };
+    return {
+      client: { codigo_cliente: client.codigo_cliente, nombre: client.nombre, telefono: client.telefono },
+      appointments: list,
+    };
   }
 
   function demoCancel(payload) {
     const db = loadDB();
     const appt = db.appointments.find((a) => a.id === payload.id);
     if (!appt) throw new Error("No encontramos esa cita.");
-    if (U.normalizePhone(appt.cliente_telefono) !== U.normalizePhone(payload.telefono)) {
-      throw new Error("El teléfono no coincide con la cita.");
-    }
+    const client = findDemoClientByCredentials(db, payload);
+    if ((appt.cliente_id && appt.cliente_id !== client.id) || U.normalizePhone(appt.cliente_telefono) !== U.normalizePhone(client.telefono)) throw new Error("La cita no pertenece a este perfil de cliente.");
     if (!["pendiente", "confirmada"].includes(appt.estado)) {
       throw new Error("Esta cita ya no se puede cancelar.");
     }
@@ -664,6 +714,7 @@
     if (entity === "clients") {
       if (!String(input.nombre || "").trim()) throw new Error("El cliente necesita un nombre.");
       input.telefono = String(input.telefono || "").trim();
+      input.codigo_cliente = input.codigo_cliente || nextClientCode(list);
       input.creado_en = input.creado_en || U.todayISO();
       input.total_citas = Number(input.total_citas) || 0;
       input.total_gastado = Number(input.total_gastado) || 0;
@@ -864,14 +915,14 @@
       return request("book", payload);
     },
 
-    async lookup(telefono) {
-      if (DEMO) return demoLookup({ telefono });
-      return request("lookup", { telefono });
+    async lookup(identity) {
+      if (DEMO) return demoLookup(identity);
+      return request("lookup", identity);
     },
 
-    async cancel(id, telefono) {
-      if (DEMO) return demoCancel({ id, telefono });
-      return request("cancel", { id, telefono });
+    async cancel(id, identity) {
+      if (DEMO) return demoCancel({ id, ...identity });
+      return request("cancel", { id, ...identity });
     },
 
     /* ---------- Panel ---------- */

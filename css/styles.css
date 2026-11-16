@@ -178,6 +178,15 @@ ul { margin: 0; padding: 0; list-style: none; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .field--full { grid-column: 1 / -1; }
 .field-hint { font-size: 12px; color: var(--muted); }
+.field-hint--success { color: #8fc69a; }
+.field-hint--error { color: #e28d85; }
+.returning-client { margin-top: 18px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); }
+.returning-client__form { margin-top: 14px; }
+.returning-client__form[hidden] { display: none; }
+.returning-client__form .field__label { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.client-history-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 20px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); }
+.client-history-head h3 { margin-top: 5px; font-family: var(--font-display); font-size: 22px; font-weight: 400; text-transform: uppercase; }
+.client-history-head > span { color: var(--muted); font-size: 12px; }
 
 /* ---------- 4. Utilidades ---------- */
 .section { padding-block: clamp(64px, 8vw, 104px); }
@@ -835,8 +844,8 @@ button.site-nav__link { border: 0; background: none; cursor: pointer; text-align
 .success-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 22px; }
 
 .lookup-panel { padding: clamp(24px, 4vw, 34px); }
-.lookup-form { display: flex; gap: 8px; margin-top: 22px; }
-.lookup-form .input { flex: 1; }
+.lookup-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+.lookup-form button { grid-column: 1 / -1; }
 .appointments-list { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
 .appt-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px 16px; }
 .appt-card__top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
@@ -1439,7 +1448,8 @@ table.data .sub { font-size: 10.5px; color: var(--admin-muted); margin-top: 1px;
   .option-grid { grid-template-columns: 1fr; }
   .slot-grid { grid-template-columns: repeat(3, 1fr); }
   .form-grid { grid-template-columns: 1fr; }
-  .lookup-form { flex-direction: column; }
+  .lookup-form { grid-template-columns: 1fr; }
+  .lookup-form button { grid-column: auto; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .barbers-admin-grid { grid-template-columns: 1fr; }
   .admin-form-grid { grid-template-columns: 1fr; }

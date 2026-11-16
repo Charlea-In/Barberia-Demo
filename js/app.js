@@ -35,7 +35,7 @@
     barbers: [...C.barbers],
     config: { ...C.contact },
     booking: null,
-    lookup: { phone: "", results: null, confirmId: null, loading: false },
+    lookup: { identity: null, client: null, results: null, error: "", confirmId: null, loading: false },
   };
 
   document.addEventListener("DOMContentLoaded", init);
@@ -285,6 +285,8 @@
       loading: false,
       result: null,
       client: { nombre: "", telefono: "", email: "", notas: "" },
+      clientVerification: null,
+      clientLookup: { open: false, loading: false, code: "", nombre: "", telefono: "", message: "", isError: false },
       reqToken: 0,
     };
     renderBooking();
@@ -446,6 +448,21 @@
 
     if (b.step === 4) {
       const client = b.client || {};
+      const returningClientHtml = b.clientVerification
+        ? `<div class="field-hint field-hint--success" role="status">Cliente encontrado: <b>${U.esc(b.clientVerification.codigo_cliente)}</b>. La cita se asociará a tu historial. <button class="link-arrow" type="button" data-clear-client-verification>Usar otros datos</button></div>`
+        : `<div class="returning-client">
+            <button class="link-arrow" type="button" data-toggle-client-lookup>¿Ya eres cliente?</button>
+            <div class="returning-client__form" ${b.clientLookup.open ? "" : "hidden"}>
+              <p class="field-hint">Ingresa tu código de cliente, nombre y teléfono para encontrar tu perfil.</p>
+              <form id="returning-client-form" class="form-grid">
+                <label class="field"><span class="field__label">Código de cliente</span><input class="input" name="codigo_cliente" value="${U.esc(b.clientLookup.code)}" placeholder="BA-01" autocomplete="off" required></label>
+                <label class="field"><span class="field__label">Nombre completo</span><input class="input" name="nombre" value="${U.esc(b.clientLookup.nombre)}" autocomplete="name" required></label>
+                <label class="field"><span class="field__label">Teléfono (10 dígitos)</span><input class="input" name="telefono" type="tel" inputmode="numeric" value="${U.esc(b.clientLookup.telefono)}" placeholder="5512345678" autocomplete="tel" required></label>
+                <div class="field field--full"><button class="btn btn--outline btn--sm" type="submit" ${b.clientLookup.loading ? "disabled" : ""}>${b.clientLookup.loading ? "Buscando…" : "Buscar mi perfil"}</button></div>
+                ${b.clientLookup.message ? `<div class="field field--full field-hint ${b.clientLookup.isError ? "field-hint--error" : "field-hint--success"}" role="status">${U.esc(b.clientLookup.message)}${b.clientLookup.isError ? ` <button class="link-arrow" type="button" data-new-client-mode>Continuar como cliente nuevo</button>` : ""}</div>` : ""}
+              </form>
+            </div>
+          </div>`;
       return `<div class="form-grid">
         <div class="field field--full">
           <label for="bk-nombre">Nombre completo *</label>
@@ -464,7 +481,8 @@
           <textarea class="textarea" id="bk-notas" name="notas" placeholder="Alergias, referencias de corte, etc.">${U.esc(client.notas || "")}</textarea>
         </div>
       </div>
-      <p class="field-hint" style="margin-top:12px">Al reservar aceptas que te contactemos por WhatsApp para confirmar la cita.</p>`;
+      <p class="field-hint" style="margin-top:12px">Al reservar aceptas que te contactemos por WhatsApp para confirmar la cita.</p>
+      ${returningClientHtml}`;
     }
 
     return "";
@@ -513,16 +531,17 @@
     const r = state.booking.result;
     const waDigits = String(state.config.whatsapp || C.contact.whatsapp).replace(/\D/g, "");
     const waText = encodeURIComponent(
-      `Hola, reservé una cita en ${C.brand.name}. Código ${r.codigo} · ${U.formatDate(r.fecha, "short")} ${r.hora} · ${r.servicio_nombre}`
+      `Hola, reservé una cita en ${C.brand.name}. Código de cliente ${r.codigo_cliente} · Código de cita ${r.codigo} · ${U.formatDate(r.fecha, "short")} ${r.hora} · ${r.servicio_nombre}`
     );
     return `<div class="booking-success">
       <div class="success-check">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
       </div>
       <h3>Todo listo</h3>
-      <p>Tu cita quedó registrada. Te contactaremos por WhatsApp para confirmar. Guarda tu código.</p>
+      <p>Tu cita quedó registrada. Guarda tu código de cliente para consultar tu historial y reservar más rápido.</p>
       <div class="success-ticket">
         <div class="success-ticket__row"><span>Código</span><b class="success-code">${U.esc(r.codigo)}</b></div>
+        ${r.codigo_cliente ? `<div class="success-ticket__row"><span>Tu código de cliente</span><b class="success-code">${U.esc(r.codigo_cliente)}</b></div>` : ""}
         <div class="success-ticket__row"><span>Servicio</span><b>${U.esc(r.servicio_nombre)}</b></div>
         <div class="success-ticket__row"><span>Barbero</span><b>${U.esc(r.barbero_nombre)}</b></div>
         <div class="success-ticket__row"><span>Fecha</span><b>${U.esc(U.formatDate(r.fecha, "long"))}</b></div>
@@ -568,12 +587,61 @@
     if (!b || b.step !== 4) return;
     const name = $("#bk-nombre");
     if (!name) return;
-    b.client = {
+    const nextClient = {
       nombre: name.value.trim(),
       telefono: $("#bk-tel").value.trim(),
       email: $("#bk-email").value.trim(),
       notas: $("#bk-notas").value.trim(),
     };
+    if (b.clientVerification && (
+      clientNameKey(nextClient.nombre) !== clientNameKey(b.clientVerification.nombre) ||
+      U.normalizePhone(nextClient.telefono) !== U.normalizePhone(b.clientVerification.telefono)
+    )) b.clientVerification = null;
+    b.client = nextClient;
+  }
+
+  function clientNameKey(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  async function verifyReturningClient(form) {
+    const values = Object.fromEntries(new FormData(form).entries());
+    const identity = {
+      codigo_cliente: String(values.codigo_cliente || "").trim().toUpperCase(),
+      nombre: String(values.nombre || "").trim(),
+      telefono: String(values.telefono || "").trim(),
+    };
+    const b = state.booking;
+    b.clientLookup = { ...b.clientLookup, ...identity, loading: true, message: "", isError: false };
+    if (identity.nombre.length < 2 || U.normalizePhone(identity.telefono).length < 10 || !/^BA-\d{2,}$/.test(identity.codigo_cliente)) {
+      b.clientLookup.loading = false;
+      b.clientLookup.open = true;
+      b.clientLookup.message = "Revisa tu código BA, nombre y teléfono de 10 dígitos.";
+      b.clientLookup.isError = true;
+      renderBooking();
+      return;
+    }
+
+    try {
+      const result = await S.lookup(identity);
+      b.client.nombre = result.client.nombre;
+      b.client.telefono = result.client.telefono;
+      b.clientVerification = {
+        codigo_cliente: result.client.codigo_cliente,
+        nombre: result.client.nombre,
+        telefono: result.client.telefono,
+      };
+      b.clientLookup.open = false;
+      b.clientLookup.message = "Perfil encontrado. Tus próximas citas y cortes quedarán vinculados a este cliente.";
+      b.clientLookup.isError = false;
+    } catch (error) {
+      b.clientLookup.open = true;
+      b.clientLookup.message = error.message || "No encontramos ese perfil. Revisa tus datos o continúa como cliente nuevo.";
+      b.clientLookup.isError = true;
+    } finally {
+      b.clientLookup.loading = false;
+      renderBooking();
+    }
   }
 
   async function submitBooking() {
@@ -601,6 +669,7 @@
         cliente_telefono: client.telefono,
         cliente_email: client.email,
         notas: client.notas,
+        codigo_cliente: b.clientVerification ? b.clientVerification.codigo_cliente : "",
         servicio_id: b.serviceId,
         barbero_id: b.barberId,
         fecha: b.date,
@@ -609,7 +678,7 @@
       b.result = result;
       b.step = 5;
       renderBooking();
-      U.toast(`Cita reservada. Código ${result.codigo}`, "success", 6000);
+      U.toast(`Cita reservada. Tu código de cliente es ${result.codigo_cliente || "—"}.`, "success", 6000);
       renderHeroNext();
     } catch (error) {
       U.toast(error.message || "No se pudo reservar. Intenta de nuevo.", "error", 5200);
@@ -642,23 +711,29 @@
 
   /* ---------- Mis citas ---------- */
   function openLookup() {
-    state.lookup = { phone: "", results: null, confirmId: null, loading: false };
+    state.lookup = { identity: null, client: null, results: null, error: "", confirmId: null, loading: false };
     $("#lookup-results").innerHTML = "";
+    $("#lookup-code").value = "";
+    $("#lookup-name").value = "";
     $("#lookup-phone").value = "";
     U.openModal("#lookup-modal");
   }
 
-  async function searchAppointments(phone) {
+  async function searchAppointments(identity) {
     state.lookup.loading = true;
     state.lookup.confirmId = null;
+    state.lookup.identity = identity;
+    state.lookup.client = null;
+    state.lookup.error = "";
+    state.lookup.results = null;
     $("#lookup-results").innerHTML = `<div class="appointments-list"><div class="skeleton" style="height:96px"></div></div>`;
     try {
-      const res = await S.lookup(phone);
-      state.lookup.phone = phone;
+      const res = await S.lookup(identity);
+      state.lookup.client = res.client;
       state.lookup.results = res.appointments || [];
     } catch (error) {
       state.lookup.results = [];
-      U.toast(error.message || "No se pudo consultar.", "error");
+      state.lookup.error = error.message || "No se pudo consultar el perfil.";
     } finally {
       state.lookup.loading = false;
       renderLookup();
@@ -667,16 +742,19 @@
 
   function renderLookup() {
     const box = $("#lookup-results");
-    const { results, confirmId } = state.lookup;
+    const { results, confirmId, client, error } = state.lookup;
     if (results === null) {
       box.innerHTML = "";
       return;
     }
+    if (!client) {
+      box.innerHTML = `<div class="empty-state" style="margin-top:22px"><strong>No encontramos ese perfil</strong>${U.esc(error || "Revisa tu código de cliente, nombre y teléfono.")}</div>`;
+      return;
+    }
+
+    const clientHeader = `<div class="client-history-head"><div><span class="eyebrow">${U.esc(client.codigo_cliente)}</span><h3>${U.esc(client.nombre)}</h3></div><span>${results.length} ${results.length === 1 ? "cita" : "citas"}</span></div>`;
     if (!results.length) {
-      box.innerHTML = `<div class="empty-state" style="margin-top:22px">
-        <strong>No encontramos citas</strong>
-        Revisa que el teléfono sea el mismo con el que reservaste.
-      </div>`;
+      box.innerHTML = `${clientHeader}<div class="empty-state" style="margin-top:22px"><strong>Aún no hay citas en tu historial</strong>Cuando reserves tu primer corte, aparecerá aquí.</div>`;
       return;
     }
 
@@ -712,7 +790,7 @@
       </div>`;
     };
 
-    box.innerHTML = `
+    box.innerHTML = `${clientHeader}
       ${upcoming.length ? `<div class="slot-group"><div class="slot-group__label">Próximas</div><div class="appointments-list">${upcoming.map((a) => card(a, false)).join("")}</div></div>` : ""}
       ${past.length ? `<div class="slot-group"><div class="slot-group__label">Historial</div><div class="appointments-list">${past.map((a) => card(a, true)).join("")}</div></div>` : ""}
     `;
@@ -720,10 +798,10 @@
 
   async function cancelAppointment(id) {
     try {
-      await S.cancel(id, state.lookup.phone);
+      await S.cancel(id, state.lookup.identity);
       U.toast("Cita cancelada. Te esperamos en otra ocasión.", "success");
       state.lookup.confirmId = null;
-      await searchAppointments(state.lookup.phone);
+      await searchAppointments(state.lookup.identity);
     } catch (error) {
       U.toast(error.message || "No se pudo cancelar.", "error");
     }
@@ -837,18 +915,54 @@
         b.assignedBarber = b.barberId === "any" && slot ? slot.barbers[0] : b.barberId;
         renderBooking();
       }
+
+      if (event.target.closest("[data-toggle-client-lookup]")) {
+        captureClient();
+        b.clientLookup.open = !b.clientLookup.open;
+        b.clientLookup.message = "";
+        if (b.clientLookup.open) {
+          b.clientLookup.nombre = b.clientLookup.nombre || b.client.nombre;
+          b.clientLookup.telefono = b.clientLookup.telefono || b.client.telefono;
+        }
+        renderBooking();
+        return;
+      }
+      if (event.target.closest("[data-clear-client-verification]")) {
+        b.clientVerification = null;
+        renderBooking();
+        return;
+      }
+      if (event.target.closest("[data-new-client-mode]")) {
+        b.clientLookup.open = false;
+        b.clientLookup.message = "Completa los datos de arriba para continuar como cliente nuevo.";
+        b.clientLookup.isError = false;
+        renderBooking();
+        return;
+      }
+    });
+
+    $("#booking-modal").addEventListener("submit", (event) => {
+      if (event.target.id !== "returning-client-form") return;
+      event.preventDefault();
+      verifyReturningClient(event.target);
     });
 
     // Búsqueda de citas
     $("#lookup-form").addEventListener("submit", (event) => {
       event.preventDefault();
-      const phone = $("#lookup-phone").value.trim();
-      if (U.normalizePhone(phone).length < 10) {
-        U.toast("Escribe un teléfono de 10 dígitos.", "error");
-        $("#lookup-phone").focus();
+      const identity = {
+        codigo_cliente: $("#lookup-code").value.trim().toUpperCase(),
+        nombre: $("#lookup-name").value.trim(),
+        telefono: $("#lookup-phone").value.trim(),
+      };
+      if (!/^BA-\d{2,}$/.test(identity.codigo_cliente) || clientNameKey(identity.nombre).length < 2 || U.normalizePhone(identity.telefono).length < 10) {
+        U.toast("Revisa tu código BA, nombre y teléfono de 10 dígitos.", "error");
+        if (!/^BA-\d{2,}$/.test(identity.codigo_cliente)) $("#lookup-code").focus();
+        else if (clientNameKey(identity.nombre).length < 2) $("#lookup-name").focus();
+        else $("#lookup-phone").focus();
         return;
       }
-      searchAppointments(phone);
+      searchAppointments(identity);
     });
 
     // Al cerrar la reserva, refresca el próximo hueco del hero

@@ -2,7 +2,7 @@
 
 Sitio web y panel de administración para una barbería. Funciona como sitio estático en **GitHub Pages** y usa **Google Sheets** como base de datos a través de un Web App de **Google Apps Script**.
 
-- **Sitio público:** presentación, servicios, barberos, reserva de citas y consulta/cancelación con el teléfono.
+- **Sitio público:** presentación, servicios, barberos, reserva de citas y acceso al historial con código de cliente, nombre y teléfono.
 - **Panel privado:** resumen del negocio, agenda, clientes, ingresos, gastos, equipo, catálogo de servicios y ajustes.
 - **Jornada por barbero:** reloj de corte en vivo, confirmaciones, ingresos y comisión estimada de cada barbero, con tiempo promedio real por servicio.
 - **Modo demo:** si aún no conectas Google Sheets, todo funciona con datos locales en el navegador.
@@ -61,7 +61,7 @@ Al recargar, el sitio y el panel detectan la URL y dejan de usar el modo demo.
 | `Config` | Nombre del negocio, contacto, horario, moneda. |
 | `Servicios` | Catálogo, precio, duración, orden y visibilidad. |
 | `Barberos` | Equipo, especialidad, comisión, color y estado. |
-| `Clientes` | Contacto e historial calculado. |
+| `Clientes` | Contacto, código de cliente (`BA-01`, `BA-02`, …) e historial calculado. |
 | `Citas` | Agenda con servicio, barbero, estado y origen. |
 | `Ingresos` | Cobros de servicios y ventas de productos. |
 | `Gastos` | Renta, insumos, servicios, marketing, etc. |

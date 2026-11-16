@@ -1236,6 +1236,7 @@
 
       <div class="drawer__section">
         <h4>Contacto</h4>
+        <div class="history-item"><span class="history-item__meta">Código de cliente</span><span>${esc(client.codigo_cliente || "Se asignará al migrar")}</span></div>
         <div class="history-item"><span class="history-item__meta">Email</span><span>${esc(client.email || "—")}</span></div>
         <div class="history-item"><span class="history-item__meta">Última visita</span><span>${stats.last ? U.formatDate(stats.last, "numeric") : "—"}</span></div>
         <div class="history-item"><span class="history-item__meta">Cliente desde</span><span>${client.creado_en ? U.formatDate(client.creado_en, "numeric") : "—"}</span></div>
